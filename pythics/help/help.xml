@@ -1,0 +1,1534 @@
+<?xml version="1.0" encoding="UTF-8"?><!--  
+Copyright 2012 - 2014 Brian R. D'Urso
+
+This file is part of Python Instrument Control System, also known as Pythics. 
+
+Pythics is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. 
+
+Pythics is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with Pythics. If not, see <http://www.gnu.org/licenses/>.
+-->
+<html>
+  <head>
+    <title>Pythics Help</title>
+    <style type="text/css">
+      body {background-color: #eeeeee; margin: 10px; padding: 5px}
+      a {align: left; color: black; font-size: 8pt; font-family: default; font-style: normal; font-weight: normal}
+      p {align: left; color: black; font-size: 8pt; font-family: default; font-style: normal; font-weight: normal}
+      h1 {align: center; font-size: 18pt; font-family: default; font-style: normal; font-weight: bold}
+      h2 {align: left; font-size: 16pt; font-family: default; font-style: normal; font-weight: normal}
+      h3 {align: left; font-size: 14pt; font-family: default; font-style: normal; font-weight: normal}
+      h4 {align: left; font-size: 12pt; font-family: default; font-style: normal; font-weight: normal}
+      h5 {align: left; font-size: 10pt; font-family: default; font-style: normal; font-weight: normal}
+      h6 {align: left; font-size: 8pt; font-family: default; font-style: normal; font-weight: normal}
+      object {align: left}
+      table {align: center}
+    </style>
+  </head>
+  
+  <body>
+    <object classid="Import" id="inspect_master">
+      <param name="module" value="inspect"/>
+    </object>
+    
+    <h1>Python Instrument Control System (Pythics)</h1>
+    <h1>Help and Examples</h1>
+    
+    <hr/>
+    
+    <a id="index"/>
+    <h2>Index</h2>
+    <a href="#introduction">Introduction</a><br/>
+    <h3>Elements and PyQt Controls</h3>
+    <a href="#basic">Basic Elements</a><br/>
+    <a href="#button">Button</a><br/>
+    <a href="#check_box">CheckBox</a><br/>
+    <a href="#choice_box">ChoiceBox</a><br/>
+    <a href="#choice_button">ChoiceButton</a><br/>
+    <a href="#event_button">EventButton</a><br/>
+    <a href="#file_dialog">FileDialog</a><br/>
+    <a href="#file_picker">FilePicker</a><br/>
+    <a href="#global_action">GlobalAction</a><br/>
+    <a href="#global_namespace">GlobalNamespace</a><br/>
+    <a href="#global_trigger">GlobalTrigger</a><br/>
+    <a href="#image">Image</a><br/>
+    <a href="#image_button">ImageButton</a><br/>
+    <a href="#import">Import</a><br/>
+    <a href="#input_dialog">InputDialog</a><br/>
+    <a href="#knob">Knob</a><br/>
+    <a href="#message_dialog">MessageDialog</a><br/>
+    <a href="#meter">Meter</a><br/>
+    <a href="#num_box">NumBox</a><br/>
+    <a href="#parameter_loader">ParameterLoader</a><br/>
+    <a href="#radio_button_box">RadioButtonBox</a><br/>
+    <a href="#run_button">RunButton</a><br/>
+    <a href="#script_loader">ScriptLoader</a><br/>
+    <a href="#scroll_bar">ScrollBar</a><br/>
+    <a href="#shell">Shell</a><br/>
+    <a href="#sub_window">SubWindow</a><br/>
+    <a href="#text_box">TextBox</a><br/>
+    <a href="#text_io_box">TextIOBox</a><br/>
+    <a href="#timer">Timer</a><br/>
+    <h3>Matplotlib Controls</h3>
+    <a href="#mpl_canvas">mpl.Canvas</a><br/>
+    <a href="#mpl_plot_2d">mpl.Plot2D</a><br/>
+    <a href="#mpl_chart_2d">mpl.Chart2D</a><br/>
+    <h3>PyQwt Controls</h3>
+    <a href="#qwt_chart">qwt.Chart</a><br/>
+    <a href="#qwt_gauge">qwt.Gauge</a><br/>
+    <a href="#qwt_knob">qwt.Knob</a><br/>
+    <a href="#qwt_plot">qwt.Plot</a><br/>
+    <a href="#qwt_point_line_plot">qwt.PointLinePlot</a><br/>
+    <a href="#qwt_slider">qwt.Slider</a><br/>
+    <h3>Arbitrary QWidgets</h3>
+    <a href="#qwidgets">QWidgets</a><br/>
+    <h3>License</h3>
+    <a href="#copying">Copying</a><br/>
+    
+    <hr/>
+    
+    <a id="introduction"/>
+    <h2>Introduction</h2>
+    <object classid="TextBox" height="300" id="introduction" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <hr/>
+    
+    <a id="basic"/>
+    <h2>Basic Elements</h2>
+    <h1>h1 Text</h1>
+    <h2>h2 Text</h2>
+    <h3>h3 Text</h3>
+    <h4>h4 Text</h4>
+    <h5>h5 Text</h5>
+    <h6>h6 Text</h6>
+    <p>p Text</p>
+    
+    <br/>
+    
+    <p>Anchor: </p>
+    <a href="#num_box">NumBox</a> 
+    
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="element_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    
+    <a id="button"/>
+    <h2>Button</h2>
+    <object classid="Button" id="button_1" width="200">
+      <param name="actions" value="{'clicked': 'help.test_button_1'}"/>
+      <param name="label" value="button_1"/>
+    </object>
+    
+    <object classid="Button" id="button_2" width="200">
+      <param name="actions" value="{'clicked': 'help.test_button_2A'}"/>
+      <param name="label" value="button_2"/>
+    </object>
+    
+    <br/>
+    
+    <object classid="Button" id="toggle_button_1" width="200">
+      <param name="label" value="Stop"/>
+      <param name="toggle" value="True"/>
+      <param name="actions" value="{'clicked': 'help.test_toggle_button'}"/>
+    </object>
+    
+    <p>result: </p>
+    <object classid="TextBox" id="toggle_button_result" width="100"/>
+    
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="Button_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    
+    <a id="check_box"/>
+    <h2>CheckBox</h2>
+    <object classid="CheckBox" id="check_box_1">
+      <param name="label" value="Enabled"/>
+      <param name="actions" value="{'stateChanged': 'help.test_check_box_1'}"/>
+      <param name="save" value="True"/>
+    </object>
+    
+    <br/>
+    
+    <object classid="CheckBox" id="check_box_2">
+      <param name="label" value="Test Checkbox 2"/>
+      <param name="actions" value="{'stateChanged': 'help.test_check_box_2'}"/>
+    </object>
+    
+    <p>result: </p>
+    <object classid="TextBox" id="check_box_result" width="100"/>
+    
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="CheckBox_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    
+    <a id="choice_box"/>
+    <h2>ChoiceBox</h2>
+    <object classid="ChoiceBox" height="100" id="choice_box_1" width="150">
+      <param name="actions" value="{'itemSelectionChanged': 'help.test_choice_box_1'}"/>
+      <param name="choices" value="['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight']"/>
+      <param name="style" value="single"/>
+      <param name="save" value="True"/>
+    </object>
+    
+    <p>result: </p>
+    <object classid="TextBox" id="choice_box_result_1" width="200"/>
+    
+    <br/>
+    
+    <object classid="ChoiceBox" height="100" id="choice_box_2" width="150">
+      <param name="actions" value="{'itemSelectionChanged': 'help.test_choice_box_2'}"/>
+      <param name="choices" value="['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight']"/>
+      <param name="style" value="multiple"/>
+    </object>
+    
+    <p>result: </p>
+    <object classid="TextBox" id="choice_box_result_2" width="200"/>
+    
+    <br/>
+    
+    <object classid="ChoiceBox" height="100" id="choice_box_3" width="150">
+      <param name="actions" value="{'itemSelectionChanged': 'help.test_choice_box_3'}"/>
+      <param name="choices" value="['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight']"/>
+      <param name="style" value="extended"/>
+    </object>
+    
+    <p>result: </p>
+    <object classid="TextBox" id="choice_box_result_3" width="200"/>
+    
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="ChoiceBox_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    
+    <a id="choice_button"/>
+    <h2>ChoiceButton</h2>
+    <object classid="ChoiceButton" id="choice_button_1" width="100">
+      <param name="actions" value="{'activated': 'help.test_choice_button'}"/>
+      <param name="choices" value="['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight']"/>
+    </object>
+    
+    <p>result: </p>
+    <object classid="TextBox" id="choice_button_result" width="100"/>
+    
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="ChoiceButton_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    
+    <a id="event_button"/>
+    <h2>EventButton</h2>
+    <object classid="Button" id="event_button_1_start" width="200">
+      <param name="actions" value="{'clicked': 'help.test_event_button_1'}"/>
+      <param name="label" value="Start"/>
+    </object>
+    <object classid="EventButton" id="event_button_1" width="200">
+      <param name="label" value="Stop"/>
+    </object>
+    
+    <p>result: </p>
+    <object classid="TextBox" id="event_button_result" width="100"/>
+    
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="EventButton_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    
+    <a id="file_dialog"/>
+    <h2>FileDialog</h2>
+    <object classid="FileDialog" id="file_dialog_1" width="100%"/>
+    
+    <br/>
+    
+    <object classid="TextBox" id="file_dialog_result" width="100%"/>
+    
+    <br/>
+    
+    <object classid="Button" width="200">
+      <param name="actions" value="{'clicked': 'help.test_file_dialog_1'}"/>
+      <param name="label" value="Open Dialog"/>
+    </object>
+    
+    <object classid="Button" width="200">
+      <param name="actions" value="{'clicked': 'help.test_file_dialog_2'}"/>
+      <param name="label" value="Save Dialog"/>
+    </object>
+    
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="FileDialog_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    
+    <a id="file_picker"/>
+    <h2>FilePicker</h2>
+    <object classid="FilePicker" id="file_picker_1" width="500">
+      <param name="label" value="help file"/>
+      <param name="actions" value="{'textChanged': 'help.test_file_picker'}"/>
+      <param name="save" value="True"/>
+    </object>
+    
+    <p>result: </p>
+    <object classid="TextBox" id="file_picker_result" width="100"/>
+    
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="FilePicker_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    
+    <a id="global_action"/>
+    <h2>GlobalAction</h2>
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="GlobalAction_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    
+    <a id="global_namespace"/>
+    <h2>GlobalNamespace</h2>
+    <object classid="GlobalNamespace" id="globals" width="100%"/>
+    
+    <br/>
+    
+    <object classid="TextBox" id="global_namespace_result" width="100"/>
+    
+    <object classid="Button" width="200">
+      <param name="actions" value="{'clicked': 'help.test_global_store'}"/>
+      <param name="label" value="Store in Global"/>
+    </object>
+    
+    <object classid="Button" width="200">
+      <param name="actions" value="{'clicked': 'help.test_global_retrieve'}"/>
+      <param name="label" value="Retrieve from Global"/>
+    </object>
+    
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="GlobalNamespace_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    
+    <a id="global_trigger"/>
+    <h2>GlobalTrigger</h2>
+    <object classid="GlobalTrigger" id="global_trigger" width="100%">
+      <param name="action_id" value="test_global_action"/>
+    </object>
+    
+    <br/>
+    
+    <object classid="Button" width="200">
+      <param name="actions" value="{'clicked': 'help.test_global_trigger'}"/>
+      <param name="label" value="Trigger Global Action"/>
+    </object>
+    
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="GlobalTrigger_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    
+    <a id="image"/>
+    <h2>Image</h2>
+    <object classid="Image" height="300" id="image_1" width="100%">
+      <param name="actions" value="{'mouseLeftPress': 'help.test_image_left_down', 'mouseLeftRelease': 'help.test_image_left_up', 'mouseRightPress': 'help.test_image_right_down', 'mouseRightRelease': 'help.test_image_right_up'}"/>
+    </object>
+    <br/>
+    
+    <object classid="TextBox" id="image_left_down_result" width="25%"/>
+    
+    <object classid="TextBox" id="image_left_up_result" width="25%"/>
+    
+    <object classid="TextBox" id="image_right_down_result" width="25%"/>
+    
+    <object classid="TextBox" id="image_right_up_result" width="25%"/>
+    
+    <br/>
+    
+    <object classid="Image" height="300" id="image_2" width="100%">
+      <param name="fit" value="True"/>
+    </object>
+    
+    <br/>
+    
+    <object classid="FilePicker" id="image_image_filename" width="100%">
+      <param name="label" value="Image file"/>
+      <param name="save" value="True"/>
+      <param name="type" value="'open'"/>
+    </object>
+    
+    <br/>
+    
+    <object classid="Button" width="50%">
+      <param name="actions" value="{'clicked': 'help.test_image'}"/>
+      <param name="label" value="Load Image"/>
+    </object>
+    
+    <object classid="Button" width="50%">
+      <param name="actions" value="{'clicked': 'help.image_get_loop'}"/>
+      <param name="label" value="Test Get Loop"/>
+    </object>
+    
+    <br/>
+    
+    <h4>Image - with shared memory</h4>
+    <object classid="Image" height="300" id="image_3" width="100%">
+      <param name="use_shared_memory" value="True"/>
+      <param name="image_dimensions" value="(1280, 960)"/>
+    </object>
+    
+    <br/>
+    
+    <object classid="FilePicker" id="image_with_shared_image_filename" width="100%">
+      <param name="label" value="Image file"/>
+      <param name="save" value="True"/>
+      <param name="type" value="open"/>
+    </object>
+    
+    <br/>
+    
+    <object classid="Button" width="50%">
+      <param name="actions" value="{'clicked': 'help.test_image_with_shared'}"/>
+      <param name="label" value="Load Image"/>
+    </object>
+    
+    <object classid="Button" width="50%">
+      <param name="actions" value="{'clicked': 'help.image_with_shared_get_loop'}"/>
+      <param name="label" value="Test Get Loop"/>
+    </object>
+    
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="Image_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    
+    <a id="image_button"/>
+    <h2>ImageButton</h2>
+    <object classid="ImageButton" height="50" width="100">
+      <param name="image_filename" value="image_button.png"/>
+    </object>
+    
+    <br/>
+    
+    <object classid="ImageButton" height="50" width="100">
+      <param name="actions" value="{'clicked': 'help.test_image_button_1'}"/>
+      <param name="image_filename" value="image_button.png"/>
+      <param name="pressed_image_filename" value="image_button-pressed.png"/>
+    </object>
+    
+    <p>result: </p>
+    <object classid="TextBox" id="image_button_result_1" width="100"/>
+    
+    <br/>
+    
+    <object classid="ImageButton" height="50" id="image_button_2" width="100">
+      <param name="actions" value="{'clicked': 'help.test_image_button_2'}"/>
+      <param name="image_filename" value="image_button.png"/>
+      <param name="pressed_image_filename" value="image_button-pressed.png"/>
+      <param name="toggle" value="True"/>
+    </object>
+    
+    <p>result: </p>
+    <object classid="TextBox" id="image_button_result_2" width="100"/>
+    
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="ImageButton_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    
+    <a id="input_dialog"/>
+    <h2>InputDialog</h2>
+    <object classid="InputDialog" id="input_dialog_1" width="100%">
+      <param name="title" value="input_dialog_1"/>
+      <param name="message" value="Enter a value:"/>
+      <param name="input_type" value="str"/>
+    </object>
+    
+    <br/>
+    
+    <object classid="Button" width="20%">
+      <param name="actions" value="{'clicked': 'help.test_input_dialog_1_1'}"/>
+      <param name="label" value="Get int"/>
+    </object>
+    
+    <object classid="Button" width="20%">
+      <param name="actions" value="{'clicked': 'help.test_input_dialog_1_2'}"/>
+      <param name="label" value="Get float"/>
+    </object>
+    
+    <object classid="Button" width="20%">
+      <param name="actions" value="{'clicked': 'help.test_input_dialog_1_3'}"/>
+      <param name="label" value="Get list"/>
+    </object>
+    
+    <object classid="Button" width="20%">
+      <param name="actions" value="{'clicked': 'help.test_input_dialog_1_4'}"/>
+      <param name="label" value="Get str"/>
+    </object>
+    
+    <p>result: </p>
+    <object classid="TextBox" id="input_dialog_result_1" width="100"/>
+    
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="InputDialog_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    
+    <a id="knob"/>
+    <h2>Knob</h2>
+    <object classid="Knob" id="knob_1" height="100" width="100">
+      <param name="actions" value="{'choiceChanged': 'help.test_knob'}"/>
+      <param name="choices" value="range(0,1000)"/>
+      <param name="steps" value="50"/>
+    </object>
+    
+    <p>result: </p>
+    <object classid="TextBox" id="knob_result" width="100"/>
+    
+    <object classid="Meter" id="knob_meter" width="200" height="100">
+      <param name="minimum" value="0.0"/>
+      <param name="maximum" value="1000.0"/>
+    </object>
+
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="Knob_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    
+    <a id="message_dialog"/>
+    <h2>MessageDialog</h2>
+    <object classid="MessageDialog" id="message_dialog_1" width="100%">
+      <param name="title" value="message_dialog_1"/>
+      <param name="message" value="Click a button!"/>
+      <param name="ok_button" value="True"/>
+      <param name="cancel_button" value="True"/>
+      <param name="severity" value="critical"/>
+    </object>
+    
+    <br/>
+    
+    <object classid="Button" width="25%">
+      <param name="actions" value="{'clicked': 'help.test_message_dialog_1'}"/>
+      <param name="label" value="Open Message Box"/>
+    </object>
+    
+    <p>result: </p>
+    <object classid="TextBox" id="message_dialog_result_1" width="100"/>
+    
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="MessageDialog_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    
+    <a id="meter"/>
+    <h2>Meter</h2>
+    <object classid="Button" width="25%">
+      <param name="actions" value="{'clicked': 'help.test_meter_1'}"/>
+      <param name="label" value="Change Value"/>
+    </object>
+
+    <object classid="Meter" id="meter_1" width="300" height="150">
+      <param name="minimum" value="0.0"/>
+      <param name="maximum" value="200.0"/>
+    </object>
+    
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="Meter_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    
+    <a id="num_box"/>
+    <h2>NumBox</h2>
+    <h4>Numeric control</h4>
+    <object classid="NumBox" id="num_box_1" width="100">
+      <param name="actions" value="{'valueChanged': 'help.test_num_box_1'}"/>
+    </object>
+    
+    <p>result: </p>
+    <object classid="TextBox" id="num_box_result_1" width="100"/>
+    
+    <br/>
+    
+    <h4>Numeric control - floating point</h4>
+    <object classid="NumBox" id="num_box_2" width="100">
+      <param name="actions" value="{'valueChanged': 'help.test_num_box_2'}"/>
+      <param name="increment" value="0.1"/>
+      <param name="format_str" value="%f"/>
+      <param name="digits" value="5"/>
+    </object>
+    
+    <p>result: </p>
+    <object classid="TextBox" id="num_box_result_2" width="100"/>
+    
+    <br/>
+    
+    <h4>Numeric control - limited and fixed width</h4>
+    <object classid="NumBox" id="num_box_3" width="100">
+      <param name="actions" value="{'valueChanged': 'help.test_num_box_3'}"/>
+      <param name="digits" value="0"/>
+      <param name="minimum" value="0"/>
+      <param name="maximum" value="500"/>
+    </object>
+    
+    <p>result: </p>
+    <object classid="TextBox" id="num_box_result_3" width="100"/>
+    
+    <br/>
+    
+    <h4>Numeric control - Scientific Notation</h4>
+    <object classid="NumBox" id="num_box_4" width="200">
+      <param name="notation" value="scientific"/>
+      <param name="format_str" value="%.8e"/>
+      <param name="minimum" value="0"/>
+      <param name="maximum" value="50000"/>
+    </object>
+    
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="NumBox_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    
+    <a id="parameter_loader"/>
+    <h2>ParameterLoader</h2>
+    <object classid="ParameterLoader" width="100%">
+      <param name="filename" value="help_defaults.txt"/>
+    </object>
+    
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="ParameterLoader_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    
+    <a id="radio_button_box"/>
+    <h2>RadioButtonBox</h2>
+    <object classid="RadioButtonBox" id="radio_button_box_1">
+      <param name="actions" value="{'clicked': 'help.test_radio_button_box'}"/>
+      <param name="label" value="Test RadioButtonBox"/>
+      <param name="save" value="True"/>
+      <param name="columns" value="3"/>
+      <param name="choices" value="['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight']"/>
+    </object>
+    
+    <p>result: </p>
+    <object classid="TextBox" id="radio_button_box_result" width="100"/>
+    
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="RadioButtonBox_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    
+    <a id="run_button"/>
+    <h2>RunButton</h2>
+    <object classid="RunButton" id="run_button_1" width="200">
+      <param name="actions" value="{'run': 'help.test_run_button'}"/>
+    </object>
+    
+    <object classid="NumBox" id="run_button_result" width="100">
+      <param name="digits" value="3"/>
+    </object>
+    
+    <br/>
+    
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="RunButton_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    
+    <a id="script_loader"/>
+    <h2>ScriptLoader</h2>
+    <object classid="ScriptLoader" width="100%">
+      <param name="filename" value="'help'"/>
+      <param name="actions" value="{'initialized': 'help.Initialize', 'terminated': 'help.Terminate'}"/>
+    </object>
+    
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="ScriptLoader_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    
+    <a id="scroll_bar"/>
+    <h2>ScrollBar</h2>
+    <object classid="Button" width="200">
+      <param name="actions" value="{'clicked': 'help.test_scroll_bar_button'}"/>
+      <param name="label" value="Set ScrollBar"/>
+    </object>
+    
+    <br/>
+    
+    <object classid="ScrollBar" id="scroll_bar_1" width="50%">
+      <param name="actions" value="{'valueChanged': 'help.test_scroll_bar'}"/>
+      <param name="tracking" value="True"/>
+    </object>
+    
+    <p>result: </p>
+    <object classid="TextBox" id="scroll_bar_result" width="100"/>
+    
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="ScrollBar_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    
+    <a id="shell"/>
+    <h2>Shell</h2>
+    <object classid="Shell" height="300" id="shell_1" width="100%">
+      <param name="actions" value="{'initialized': 'help.initialize_shell_1'}"/>
+      <param name="font" value="Consola"/>
+      <param name="font_size" value="10"/>
+    </object>
+    
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="Shell_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    <a id="sub_window"/>
+    <h2>SubWindow</h2>
+    <object classid="SubWindow" height="350" id="sub_window_1" width="100%">
+      <param name="filename" value="sub_window.xml"/>
+    </object>
+    
+    <br/>
+    
+    <object classid="Button" width="100%">
+      <param name="actions" value="{'clicked': 'help.test_sub_window'}"/>
+      <param name="label" value="Test SubWindow (Copy ChoiceBox value put random int in NumBox)"/>
+    </object>
+    
+    <p>result: </p>
+    <object classid="TextBox" id="sub_window_result" width="100"/>
+    
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="SubWindow_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    <a id="text_box"/>
+    <h2>TextBox</h2>
+    <object classid="TextBox" id="text_box_1" width="100">
+      <param name="actions" value="{'textChanged': 'help.test_text_box'}"/>
+    </object>
+    
+    <p>result: </p>
+    <object classid="TextBox" id="text_box_result" width="100"/>
+    
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="TextBox_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    
+    <a id="text_io_box"/>
+    <h2>TextIOBox</h2>
+    <object classid="TextIOBox" height="100" id="text_io_box_1" width="100%">
+      <param name="reverse" value="True"/>
+    </object>
+    
+    <br/>
+    
+    <object classid="Button" width="200">
+      <param name="actions" value="{'clicked': 'help.setup_text_io_box'}"/>
+      <param name="label" value="Setup Logger"/>
+    </object>
+    
+    <object classid="Button" width="200">
+      <param name="actions" value="{'clicked': 'help.test_text_io_box'}"/>
+      <param name="label" value="Add Log Items to TextIOBox"/>
+    </object>
+    
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="TextIOBox_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    
+    <a id="timer"/>
+    <h2>Timer</h2>
+    <object classid="Button" width="200">
+      <param name="actions" value="{'clicked': 'help.start_timer'}"/>
+      <param name="label" value="Start Timer"/>
+    </object>
+    
+    <object classid="Button" width="200">
+      <param name="actions" value="{'clicked': 'help.stop_timer'}"/>
+      <param name="label" value="Stop Timer"/>
+    </object>
+    
+    <object classid="NumBox" id="timer_result" width="100">
+      <param name="digits" value="3"/>
+    </object>
+
+    <br/>
+    
+    <object classid="Timer" id="timer_1">
+      <param name="actions" value="{'triggered': 'help.test_timer'}"/>
+    </object>
+    
+    <br/>
+        
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="Timer_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    
+    <a id="mpl_canvas"/>
+    <h2>mpl.Canvas</h2>
+    <object classid="mpl.Canvas" height="400" id="mpl_canvas_1" width="100%"/>
+    
+    <br/>
+    
+    <object classid="ChoiceButton" id="mpl_canvas_choices" width="100%">
+      <param name="choices" value="['simple plot', 'polar plot', 'bar chart', 'image plot', 'pcolor', 'surface3d']"/>
+    </object>
+    
+    <br/>
+    
+    <object classid="Button" width="100%">
+      <param name="actions" value="{'clicked': 'help.test_mpl_canvas_1'}"/>
+      <param name="label" value="Plot"/>
+    </object>
+    
+    <object classid="Import" id="matplotlib" width="100%">
+      <param name="module" value="matplotlib"/>
+    </object>
+    
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="mplCanvas_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    
+    <a id="mpl_plot_2d"/>
+    <h2>mpl.Plot2D</h2>
+    <object classid="mpl.Plot2D" height="300" id="mpl_plot_2d_1" width="50%"/>
+    
+    <object classid="mpl.Plot2D" height="300" id="mpl_plot_2d_2" width="50%">
+      <param name="projection" value="polar"/>
+    </object>
+    
+    <br/>
+    
+    <object classid="mpl.Plot2D" height="300" id="mpl_plot_2d_3" width="50%">
+                                            </object>
+    
+    <object classid="mpl.Plot2D" height="300" id="mpl_plot_2d_4" width="50%">
+      <param name="projection" value="polar"/>
+      <param name="actions" value="{'axes_enter_event': 'help.test_event_mpl_plot_2d_4'}"/>
+    </object>
+    
+    <br/>
+    
+    <table width="100%">
+      <tr>
+        <td width="50%">
+          <object classid="Button" width="50%">
+            <param name="label" value="Run"/>
+            <param name="actions" value="{'clicked': 'help.test_mpl_plot_2d'}"/>
+          </object>
+        </td>
+        <td width="50%">
+          <object classid="Button" id="mpl_plot_2d_stop" width="50%">
+            <param name="toggle" value="True"/>
+            <param name="label" value="Stop"/>
+          </object>
+        </td>
+      </tr>
+    </table>
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="mplPlot2D_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    
+    <a id="mpl_chart_2d"/>
+    <h2>mpl.Chart2D</h2>
+    <object classid="mpl.Chart2D" height="600" id="mpl_chart_2d_1" width="100%">
+      <param name="plots" value="3"/>
+      <param name="length" value="5000"/>
+      <param name="fast_scroll" value="True"/>
+    </object>
+    
+    <br/>
+    
+    <object classid="Button" width="25%">
+      <param name="actions" value="{'clicked': 'help.test_mpl_chart_2d_1_1'}"/>
+      <param name="label" value="Plot 1"/>
+    </object>
+    
+    <object classid="Button" width="25%">
+      <param name="actions" value="{'clicked': 'help.test_mpl_chart_2d_1_2'}"/>
+      <param name="label" value="Change Colors"/>
+    </object>
+    
+    <object classid="Button" width="25%">
+      <param name="actions" value="{'clicked': 'help.test_mpl_chart_2d_1_3'}"/>
+      <param name="label" value="Append Data"/>
+    </object>
+    
+    <object classid="Button" width="25%">
+      <param name="actions" value="{'clicked': 'help.test_mpl_chart_2d_1_clear'}"/>
+      <param name="label" value="Clear Plot"/>
+    </object>
+    
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="mplChart2D_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    
+    <a id="qwt_chart"/>
+    <h2>qwt.Chart (use mpl.Chart2D for new code)</h2>
+    <object classid="qwt.Chart" height="600" id="qwt_chart_1" width="100%">
+      <param name="plots" value="2"/>
+      <param name="history" value="5000"/>
+    </object>
+    
+    <br/>
+    
+    <object classid="Button" width="25%">
+      <param name="actions" value="{'clicked': 'help.test_qwt_chart_1_1'}"/>
+      <param name="label" value="Plot 1"/>
+    </object>
+    
+    <object classid="Button" width="25%">
+      <param name="actions" value="{'clicked': 'help.test_qwt_chart_1_2'}"/>
+      <param name="label" value="Change Colors"/>
+    </object>
+    
+    <object classid="Button" width="25%">
+      <param name="actions" value="{'clicked': 'help.test_qwt_chart_1_3'}"/>
+      <param name="label" value="Append Data"/>
+    </object>
+    
+    <object classid="Button" width="25%">
+      <param name="actions" value="{'clicked': 'help.test_qwt_chart_1_clear'}"/>
+      <param name="label" value="Clear Plot"/>
+    </object>
+    
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="qwtChart_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    
+    <a id="qwt_gauge"/>
+    <h2>qwt.Gauge</h2>
+    <object classid="qwt.Gauge" height="50" id="qwt_gauge_1" width="50%">
+      <param name="scale_position" value="bottom"/>
+    </object>
+    
+    <object classid="qwt.Gauge" height="200" id="qwt_gauge_2">
+      <param name="max" value="10"/>
+      <param name="step" value="1"/>
+      <param name="alarm" value="8"/>
+      <param name="orientation" value="vertical"/>
+      <param name="scale_position" value="left"/>
+    </object>
+    
+    <br/>
+    
+    <object classid="Button" width="200">
+      <param name="actions" value="{'clicked': 'help.test_qwt_gauge_1'}"/>
+      <param name="label" value="Pulse Gauge 1"/>
+    </object>
+    
+    <object classid="Button" width="200">
+      <param name="actions" value="{'clicked': 'help.test_qwt_gauge_2'}"/>
+      <param name="label" value="Randomize Gauge 2"/>
+    </object>
+    
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="qwtGauge_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    
+    <a id="qwt_knob"/>
+    <h2>qwt.Knob</h2>
+    <object classid="qwt.Knob" height="200" id="qwt_knob_1" width="200">
+      <param name="actions" value="{'valueChanged': 'help.test_qwt_knobs'}"/>
+      <param name="minimum" value="0.0"/>
+      <param name="maximum" value="100.0"/>
+      <param name="steps" value="1.0"/>
+      <param name="scale_step" value="5.0"/>
+      <param name="border_width" value="2"/>
+      <param name="knob_width" value="80"/>
+    </object>
+    
+    <object classid="qwt.Knob" height="200" id="qwt_knob_2" width="200">
+      <param name="actions" value="{'valueChanged': 'help.test_qwt_knobs'}"/>
+      <param name="tracking" value="True"/>
+      <param name="minimum" value="0.0"/>
+      <param name="maximum" value="100.0"/>
+      <param name="step" value="5.0"/>
+      <param name="scale_step" value="10.0"/>
+      <param name="border_width" value="2"/>
+      <param name="knob_width" value="80"/>
+    </object>
+    
+    <p>result: </p>
+    <object classid="TextBox" id="qwt_knob_result" width="100"/>
+    
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="qwtKnob_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    
+    <a id="qwt_plot"/>
+    <h2>qwt.Plot (use mpl.Plot2D for new code)</h2>
+    <object classid="qwt.Plot" height="400" id="qwt_plot_1" width="100%"/>
+    
+    <br/>
+    
+    <object classid="Button" width="25%">
+      <param name="actions" value="{'clicked': 'help.test_qwt_plot_1_1'}"/>
+      <param name="label" value="Plot 1"/>
+    </object>
+    
+    <object classid="Button" width="25%">
+      <param name="actions" value="{'clicked': 'help.test_qwt_plot_1_2'}"/>
+      <param name="label" value="Change Colors"/>
+    </object>
+    
+    <object classid="Button" width="25%">
+      <param name="actions" value="{'clicked': 'help.test_qwt_plot_1_3'}"/>
+      <param name="label" value="Change Data"/>
+    </object>
+    
+    <object classid="Button" width="25%">
+      <param name="actions" value="{'clicked': 'help.test_qwt_plot_1_clear'}"/>
+      <param name="label" value="Clear Plot"/>
+    </object>
+    
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="qwtPlot_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    
+    <a id="qwt_point_line_plot"/>
+    <h2>qwt.PointLinePlot (use mpl.Plot2D for new code)</h2>
+    <object classid="qwt.PointLinePlot" height="400" id="qwt_point_plot_1" width="100%"/>
+    
+    <br/>
+    
+    <object classid="ChoiceBox" height="100" id="point_plot_symbol" width="150">
+      <param name="choices" value="['circle', 'square', 'diamond', 'triangle',          'triangle_down', 'triangle_up', 'triangle_left', 'triangle_right, cross',          'cross_x', 'line_horizontal', 'line_vertical', 'star', 'star_2', 'hexagon']"/><param name="style" value="single"/>
+      <param name="save" value="True"/>
+    </object>
+    
+    <object classid="ChoiceBox" height="100" id="point_plot_line_color" width="150">
+      <param name="choices" value="['black', 'blue', 'green', 'orange', 'red', 'violet', 'yellow']"/>
+      <param name="style" value="single"/>
+      <param name="save" value="True"/>
+    </object>
+    
+    <object classid="ChoiceBox" height="100" id="point_plot_fill_color" width="150">
+      <param name="choices" value="['black', 'blue', 'green', 'orange', 'red', 'violet', 'yellow']"/>
+      <param name="style" value="single"/>
+      <param name="save" value="True"/>
+    </object>
+    
+    <object classid="NumBox" id="point_plot_line_width" width="100">
+      <param name="format_str" value="%d"/>
+      <param name="digits" value="0"/>
+    </object>
+    
+    <object classid="NumBox" id="point_plot_size" width="100">
+      <param name="format_str" value="%d"/>
+      <param name="digits" value="0"/>
+    </object>
+    
+    <br/>
+    
+    <object classid="Button" width="33.33%">
+      <param name="actions" value="{'clicked': 'help.test_point_line_plot_setup'}"/>
+      <param name="label" value="Setup"/>
+    </object>
+    
+    <object classid="Button" width="33.33%">
+      <param name="actions" value="{'clicked': 'help.test_qwt_point_line_plot_1_point'}"/>
+      <param name="label" value="Draw Point"/>
+    </object>
+    
+    <object classid="Button" width="33.33%">
+      <param name="actions" value="{'clicked': 'help.test_qwt_point_line_plot_1_clear'}"/>
+      <param name="label" value="Clear"/>
+    </object>
+    
+    <br/>
+    
+    <object classid="Button" width="33.33%">
+      <param name="actions" value="{'clicked': 'help.test_qwt_point_line_plot_1_line'}"/>
+      <param name="label" value="Draw Line"/>
+    </object>
+    
+    <object classid="Button" width="33.33%">
+      <param name="actions" value="{'clicked': 'help.test_qwt_point_line_plot_1_start_line'}"/>
+      <param name="label" value="Start Line"/>
+    </object>
+    
+    <object classid="Button" width="33.33%">
+      <param name="actions" value="{'clicked': 'help.test_qwt_point_line_plot_1_line_to'}"/>
+      <param name="label" value="Draw Line To"/>
+    </object>
+    
+    <br/>
+    
+    <object classid="Button" width="33.33%">
+      <param name="actions" value="{'clicked': 'help.test_qwt_point_line_plot_1_draw_point_and_points'}"/>
+      <param name="label" value="Draw Point and Points"/>
+    </object>
+    
+    <object classid="Button" width="33.33%">
+      <param name="actions" value="{'clicked': 'help.test_qwt_point_line_plot_1_change_point_data'}"/>
+      <param name="label" value="Change Point Data"/>
+    </object>
+    
+    <object classid="Button" width="33.33%">
+      <param name="actions" value="{'clicked': 'help.test_qwt_point_line_plot_1_change_point_properties'}"/>
+      <param name="label" value="Change Point Properties"/>
+    </object>
+    
+    <br/>
+    
+    <object classid="Button" width="33.33%">
+      <param name="actions" value="{'clicked': 'help.test_qwt_point_line_plot_1_draw_line_and_lines'}"/>
+      <param name="label" value="Draw Line and Lines"/>
+    </object>
+    
+    <object classid="Button" width="33.33%">
+      <param name="actions" value="{'clicked': 'help.test_qwt_point_line_plot_1_change_line_data'}"/>
+      <param name="label" value="Change Line Data"/>
+    </object>
+    
+    <object classid="Button" width="33.33%">
+      <param name="actions" value="{'clicked': 'help.test_qwt_point_line_plot_1_change_line_properties'}"/>
+      <param name="label" value="Change Line Properties"/>
+    </object>
+    
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="qwtPointLinePlot_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    
+    <a id="qwt_slider"/>
+    <h2>qwt.Slider</h2>
+    <object classid="qwt.Slider" id="qwt_slider_1" width="50%">
+      <param name="actions" value="{'valueChanged': 'help.test_qwt_slider_1'}"/>
+      <param name="minimum" value="0"/>
+      <param name="maximum" value="1000"/>
+      <param name="step" value="10"/>
+      <param name="scale_step" value="100"/>
+      <param name="tracking" value="True"/>
+      <param name="scale_position" value="bottom"/>
+    </object>
+    
+    <object classid="qwt.Slider" height="200" id="slider_2">
+      <param name="actions" value="{'valueChanged': 'help.test_slider_2'}"/>
+      <param name="tracking" value="False"/>
+      <param name="minimum" value="0"/>
+      <param name="maximum" value="1000"/>
+      <param name="step" value="100"/>
+      <param name="scale_step" value="100"/>
+      <param name="orientation" value="vertical"/>
+      <param name="style" value="slot"/>
+      <param name="scale_position" value="right"/>
+    </object>
+    
+    <p>result: </p>
+    <object classid="TextBox" id="slider_result" width="100"/>
+    
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="qwtSlider_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    
+    <a id="qwidgets"/>
+    <h2>QWidgets - Calendar and LCDNumber</h2>
+    <h3>One of each below will fail to load, depending on whether you have PyQt or PySide!</h3>
+    <object classid="PyQt4.QtGui.QCalendarWidget" height="300" id="qwidget_2" width="500"/>
+    <object classid="PySide.QtGui.QCalendarWidget" height="300" id="qwidget_2" width="500"/>
+   
+    <br/>
+    
+    <object classid="PyQt4.QtGui.QLCDNumber" height="80" id="qwidget_1" width="500"/>
+    <object classid="PySide.QtGui.QLCDNumber" height="80" id="qwidget_1" width="500"/>
+    
+    <br/>
+    
+    <object classid="Button" width="500">
+      <param name="actions" value="{'clicked': 'help.test_qwidgets'}"/>
+      <param name="label" value="Setup"/>
+    </object>
+    
+    <hr/>
+    
+    <h2>QWidgets - pyqtgraph (appears as red boxes if pyqtgraph is not installed)</h2>
+    <object classid="Import" id="pyqtgraph">
+      <param name="module" value="pyqtgraph"/>
+    </object>
+    
+    <object classid="pyqtgraph.PlotWidget" height="400" id="pyqtgraph_plot_widget" width="100%"/>
+    
+    <object classid="pyqtgraph.GraphicsLayoutWidget" height="400" id="pyqtgraph_graphics_layout_widget" width="100%"/>
+    
+    <br/>
+    
+    <object classid="Button" width="100%">
+      <param name="actions" value="{'clicked': 'help.test_pyqtgraph'}"/>
+      <param name="label" value="Run"/>
+    </object>
+    
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="QWidgets_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    
+    <a id="copying"/>
+    <h2>Copying</h2>
+    <object classid="TextBox" height="300" id="copying" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+  </body>
+</html>

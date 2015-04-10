@@ -1,0 +1,15 @@
+(dp0
+S'function'
+p1
+S'math.sin(x)'
+p2
+sS'N_plot_steps'
+p3
+L100L
+sS'x_min'
+p4
+F0.0
+sS'x_max'
+p5
+F20.0
+s.

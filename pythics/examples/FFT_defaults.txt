@@ -1,0 +1,15 @@
+(dp0
+S'function'
+p1
+S'np.sin(2*math.pi*t) + np.cos(127.5*2*math.pi*t)'
+p2
+sS'range_max'
+p3
+F1.0
+sS'N'
+p4
+L256L
+sS'range_min'
+p5
+F0.0
+s.

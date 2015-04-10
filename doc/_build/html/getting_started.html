@@ -1,0 +1,284 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Getting started &mdash; Pythics 0.5.2 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.5.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Pythics 0.5.2 documentation" href="index.html" />
+    <link rel="next" title="Programming" href="programming.html" />
+    <link rel="prev" title="Pythics: Python Instrument Control System" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="programming.html" title="Programming"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Pythics: Python Instrument Control System"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Pythics 0.5.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="getting-started">
+<span id="id1"></span><h1>Getting started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h1>
+<p>This is the primary documentation for the Python Instrument Control System,
+also known as Pythics.</p>
+<p>Pythics is an application for running Python code intended to be used for simple
+interfaces to laboratory instruments or numerical simulations. It features a
+simple system for making graphical user interfaces (GUIs) with useful controls
+and indicators, including plotting functionality. There is a clean separation
+between the GUI and application code with multithreading and multiprocessing
+support. In this way backend code does not interfere with the functionality of
+the GUI. Pythics attempts to robustly handle all of the complex details of
+writing a program with a GUI for you, allowing you to concentrate on the
+functionality of your program.</p>
+<p>The key goals of Pythics are:</p>
+<ul class="simple">
+<li>Provide a framework which provides a highly multiprocessing environment
+without requiring any extra effort by the user/developer.</li>
+<li>Provide a simple method for specifying a GUI for typical scientific
+applications.</li>
+<li>Be as Pythonic as possible.<ul>
+<li>Use standard library functions whenever possible.</li>
+<li>Minimize introduction of new special keywords, functions, or calling
+conventions.</li>
+</ul>
+</li>
+</ul>
+<div class="section" id="requirements">
+<h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h2>
+<p>The following programs and libraries are required for Pythics to run:</p>
+<ul class="simple">
+<li><a class="reference external" href="http://www.python.org/download/releases/2.6/">Python 2.6</a> 2.6.2 or later preferred; earlier versions lack the
+multiprocessing package</li>
+<li><a class="reference external" href="http://www.riverbankcomputing.co.uk/software/pyqt/intro">PyQt</a> widget toolkit for GUI, version 4.5.4 or later</li>
+</ul>
+<p>The following libraries are strongly recommended for basic functionality in
+Pythics:</p>
+<ul class="simple">
+<li><a class="reference external" href="http://numpy.scipy.org/">NumPy</a> array support</li>
+<li><a class="reference external" href="http://matplotlib.sourceforge.net/">matplotlib</a> plotting library</li>
+</ul>
+<p>The following libraries are optional for full functionality in Pythics:</p>
+<ul class="simple">
+<li><a class="reference external" href="http://www.pythonware.com/products/pil/">PIL</a> python Imaging Library - for image display support, (1.1.7 or later
+preferred)</li>
+<li><a class="reference external" href="http://pyqwt.sourceforge.net/">PyQwt</a> widgets for scientific and engineering applications</li>
+</ul>
+<p>The following additional packages may be helpful for writing scientific code
+for Pythics:</p>
+<ul class="simple">
+<li><a class="reference external" href="http://pyvisa.sourceforge.net/">PyVISA</a> for communicating with VISA laboratory instruments</li>
+<li><a class="reference external" href="http://pyserial.sourceforge.net/">pySerial</a> for communicating with laboratory instruments by RS-232</li>
+<li><a class="reference external" href="http://www.scipy.org/">SciPy</a> for additional numerical processing routines</li>
+</ul>
+</div>
+<div class="section" id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<p>Pythics uses Python Distutils for installation. Installers are available for
+some platforms.</p>
+<p>On Windows, run the installer (.exe). It will install Pythics and place a
+shortcut on your desktop to launch Pythics.</p>
+<p>If an installer is not available for your platform, you can install from a
+source distribution (.tar.gz or .zip):</p>
+<ul class="simple">
+<li>Unpack the archive file.</li>
+<li>run <cite>python setup.py install</cite></li>
+</ul>
+</div>
+<div class="section" id="running">
+<h2>Running<a class="headerlink" href="#running" title="Permalink to this headline">¶</a></h2>
+<p>To start Pythics:</p>
+<ul>
+<li><p class="first">On Linux, go to the <cite>pythics/pythics</cite> directory and type
+<cite>python pythics-run.py</cite>.</p>
+</li>
+<li><p class="first">On Windows, double-click on the shortcut created on your desktop by the
+installer or go to the <cite>pythics/pythics</cite> directory and double-click on
+<cite>pythics-run.py</cite>.</p>
+</li>
+<li><dl class="first docutils">
+<dt>You can also start pythics from the command line with options as:</dt>
+<dd><p class="first">Usage: pythics-run.py [options]</p>
+<p>Options:</p>
+<table class="last docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd><span class="option">-h</span></kbd></td>
+<td><p class="first last">show help text then exit</p>
+</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-a</span></kbd></td>
+<td><p class="first last">selects startup html file</p>
+</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-v</span></kbd></td>
+<td><p class="first last">selects verbose mode</p>
+</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-d</span></kbd></td>
+<td><p class="first last">selects debug mode</p>
+</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">--help</span></kbd></td>
+<td><p class="first last">same as -h</p>
+</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">--app</span></kbd></td>
+<td><p class="first last">same as -a</p>
+</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">--verbose</span></kbd></td>
+<td><p class="first last">same as -v</p>
+</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">--debug</span></kbd></td>
+<td><p class="first last">same as -d</p>
+</td></tr>
+</tbody>
+</table>
+</dd>
+</dl>
+</li>
+</ul>
+<div class="section" id="using-pythics">
+<h3>Using Pythics<a class="headerlink" href="#using-pythics" title="Permalink to this headline">¶</a></h3>
+<p>Once Pythics is running, virtual instruments (VIs) can be opened and controlled
+though a combination of the Pythics menus and the VI&#8217;s GUI. Interaction with an
+individual VI&#8217;s GUI is not covered here, because it depends on the details of
+VI. Here we describe the operation of Pythics through the menus, which provide
+basic control of VI operations.</p>
+<p>File Menu</p>
+<ul class="simple">
+<li>Open...</li>
+<li>Close</li>
+<li>Close All</li>
+<li>Reload</li>
+<li>Open Workspace...</li>
+<li>Save Workspace</li>
+<li>Save Workspace As...</li>
+<li>Page Setup...</li>
+<li>Print Preview</li>
+<li>Print...</li>
+<li>Exit</li>
+</ul>
+<p>Edit Menu</p>
+<ul class="simple">
+<li>Cut</li>
+<li>Copy</li>
+<li>Paste</li>
+<li>Delete</li>
+</ul>
+<p>Parameters</p>
+<ul class="simple">
+<li>Load Defaults</li>
+<li>Load..._pySerial</li>
+<li>Save As Defaults</li>
+<li>Save As...</li>
+</ul>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Getting started</a><ul>
+<li><a class="reference internal" href="#requirements">Requirements</a></li>
+<li><a class="reference internal" href="#installation">Installation</a></li>
+<li><a class="reference internal" href="#running">Running</a><ul>
+<li><a class="reference internal" href="#using-pythics">Using Pythics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Pythics: Python Instrument Control System</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="programming.html"
+                        title="next chapter">Programming</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/getting_started.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="programming.html" title="Programming"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Pythics: Python Instrument Control System"
+             >previous</a> |</li>
+        <li><a href="index.html">Pythics 0.5.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Brian R. D&#39;Urso.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

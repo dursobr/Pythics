@@ -1,0 +1,11 @@
+(dp0
+S'decay_probability'
+p1
+F0.05
+sS'seed'
+p2
+L0L
+sS'N_initial'
+p3
+L20000L
+s.

@@ -1,0 +1,19 @@
+(dp0
+S'function'
+p1
+S'math.sin(x)'
+p2
+sS'range_max'
+p3
+F3.1415920000000002
+sS'N'
+p4
+L100L
+sS'algorithm'
+p5
+S'Monte Carlo'
+p6
+sS'range_min'
+p7
+F0.0
+s.

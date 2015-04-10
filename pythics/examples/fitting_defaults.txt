@@ -1,0 +1,18 @@
+(dp0
+S'function'
+p1
+S'p[0]*np.exp(-p[1]*x)'
+p2
+sS'fit_type'
+p3
+S'nonlinear'
+p4
+sS'file_picker'
+p5
+S'Z:/dursobr/documents_xp/pythics-all/pythics/examples/simulations/data_6_3a.csv'
+p6
+sS'initial_guess'
+p7
+S'[5000, .1]'
+p8
+s.

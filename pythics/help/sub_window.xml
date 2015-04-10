@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?><!--  
+Copyright 2012 - 2014 Brian R. D'Urso
+
+This file is part of Python Instrument Control System, also known as Pythics. 
+
+Pythics is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. 
+
+Pythics is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with Pythics. If not, see <http://www.gnu.org/licenses/>.
+--><html>
+  <head>
+    <title>Hello</title>
+    <style type="text/css">
+      body {background-color: yellow}
+      p {text-align:center; color:red}
+      h1 {text-align: center}
+      h2 {text-align: left}
+      h3 {text-align: right}
+    </style>
+  </head>
+  
+  <body>
+    <h1>SubWindow</h1>
+    
+    <h1>h1 Text</h1>
+    <h2>h2 Text</h2>
+    <h3>h3 Text</h3>
+    <h4>h4 Text</h4>
+    <h5>h5 Text</h5>
+    <h6>h6 Text</h6>
+    <p>p Text</p>
+    <br/>
+    
+    <object classid="ChoiceBox" height="100" id="choice_box_1" width="150">
+      <param name="choices" value="['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight']"/>
+    </object>
+    
+    <br/>
+    <object classid="NumBox" id="num_box_1" width="100%"/>
+    
+  </body>
+</html>

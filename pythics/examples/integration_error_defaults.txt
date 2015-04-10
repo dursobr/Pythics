@@ -1,0 +1,15 @@
+(dp0
+S'N_multiplier'
+p1
+F1.2
+sS'N_max'
+p2
+L4000000L
+sS'N_min'
+p3
+L3L
+sS'algorithm'
+p4
+S'trapezoid rule'
+p5
+s.

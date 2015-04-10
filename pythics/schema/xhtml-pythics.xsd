@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="UTF-8"?><xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  
+  
+  <!-- definition of element groups -->
+  <xs:group name="bodygroup">
+    <xs:choice>
+      <xs:element ref="a"/>
+      <xs:element ref="br"/>
+      <xs:element ref="div"/>
+      <xs:element ref="hr"/>
+      <xs:element ref="h1"/>
+      <xs:element ref="h2"/>
+      <xs:element ref="h3"/>
+      <xs:element ref="h4"/>
+      <xs:element ref="h5"/>
+      <xs:element ref="h6"/>
+      <xs:element ref="object"/>
+      <xs:element ref="p"/>
+      <xs:element ref="table"/>
+    </xs:choice>
+  </xs:group>
+  
+  
+  <!-- definition of simple elements -->
+  <xs:element name="br"/>
+  <xs:element name="title" type="xs:string"/>
+  
+  
+  <!-- definition of attributes -->
+  <xs:attribute name="class" type="xs:string"/>
+  <xs:attribute name="classid" type="xs:string"/>
+  <xs:attribute name="colspan" type="xs:positiveInteger"/>
+  <xs:attribute name="height" type="xs:nonNegativeInteger"/>
+  <xs:attribute name="href" type="xs:string"/>
+  <xs:attribute name="id" type="xs:string"/>
+  <xs:attribute name="name" type="xs:string"/>
+  <xs:attribute name="rowspan" type="xs:positiveInteger"/>
+  <xs:attribute fixed="text/css" name="type" type="xs:string"/>
+  <xs:attribute name="value" type="xs:string"/>
+  
+  <xs:attribute name="width">
+    <xs:simpleType>
+      <xs:restriction base="xs:string">
+        <xs:pattern value="[\-+]?(\d+|\d+(\.\d+)?%)"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:attribute>
+  
+  
+  <!-- definition of complex elements -->
+  <xs:element name="hr">
+    <xs:complexType>
+      <xs:attribute ref="width"/>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="h1">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:string">
+          <xs:attribute ref="class"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="h2">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:string">
+          <xs:attribute ref="class"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="h3">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:string">
+          <xs:attribute ref="class"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="h4">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:string">
+          <xs:attribute ref="class"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="h5">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:string">
+          <xs:attribute ref="class"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="h6">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:string">
+          <xs:attribute ref="class"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="p">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:string">
+          <xs:attribute ref="class"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="a">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:string">
+          <xs:attribute ref="href"/>
+          <xs:attribute ref="id"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="td">
+    <xs:complexType>
+      <xs:choice maxOccurs="unbounded" minOccurs="0">
+        <xs:group ref="bodygroup"/>
+      </xs:choice>
+      <xs:attribute ref="class"/>
+      <xs:attribute ref="width"/>
+      <xs:attribute ref="rowspan"/>
+      <xs:attribute ref="colspan"/>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="tr">
+    <xs:complexType>
+      <xs:choice maxOccurs="unbounded" minOccurs="0">
+        <xs:element ref="td"/>
+        <xs:element name="div">
+          <xs:complexType>
+            <xs:choice maxOccurs="unbounded" minOccurs="0">
+              <xs:element ref="td"/>
+            </xs:choice>
+            <xs:attribute ref="class" use="required"/>
+          </xs:complexType>
+        </xs:element>
+      </xs:choice>
+      <xs:attribute ref="class"/>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="table">
+    <xs:complexType>
+      <xs:choice maxOccurs="unbounded" minOccurs="0">
+        <xs:element ref="tr"/>
+      </xs:choice>
+      <xs:attribute ref="class"/>
+      <xs:attribute ref="width"/>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="param">
+    <xs:complexType>
+      <xs:attribute ref="name" use="required"/>
+      <xs:attribute ref="value" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="object">
+    <xs:complexType>
+      <xs:choice maxOccurs="unbounded" minOccurs="0">
+        <xs:element ref="param"/>
+      </xs:choice>
+      <xs:attribute ref="classid" use="required"/>
+      <xs:attribute ref="id"/>
+      <xs:attribute ref="width"/>
+      <xs:attribute ref="height"/>
+      <xs:attribute ref="class"/>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="style">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:string">
+          <xs:attribute ref="type"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="head">
+    <xs:complexType>
+      <xs:choice maxOccurs="unbounded" minOccurs="0">
+        <xs:element ref="title"/>
+        <xs:element minOccurs="0" ref="style"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="div">
+    <xs:complexType>
+      <xs:choice maxOccurs="unbounded" minOccurs="0">
+        <xs:group ref="bodygroup"/>
+      </xs:choice>
+      <xs:attribute ref="class" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="body">
+    <xs:complexType>
+      <xs:choice maxOccurs="unbounded" minOccurs="0">
+        <xs:group ref="bodygroup"/>
+      </xs:choice>
+      <xs:attribute ref="class"/>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="html">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="head"/>
+        <xs:element ref="body"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  
+  
+</xs:schema>

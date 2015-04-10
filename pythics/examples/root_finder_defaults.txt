@@ -1,0 +1,22 @@
+(dp0
+S'function'
+p1
+S'x**3 - 10*x**2 + x + 5'
+p2
+sS'algorithm'
+p3
+S'bisection'
+p4
+sS'N_plot_steps'
+p5
+L100L
+sS'N'
+p6
+L20L
+sS'x2'
+p7
+F11.0
+sS'x1'
+p8
+F0.0
+s.

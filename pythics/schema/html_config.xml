@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="ISO-8859-1"?><CONFIG_JAXE>
+<LANGAGE>
+<FICHIER_SCHEMA nom="xhtml-pythics.xsd"/>
+<RACINE element="html"/>
+</LANGAGE>
+
+<MENUS>
+<MENU nom="Structure">
+<MENU_INSERTION nom="comment" type_noeud="commentaire"/>
+<SEPARATEUR/>
+<MENU_INSERTION nom="html"/>
+<MENU_INSERTION nom="head"/>
+<MENU_INSERTION nom="style"/>
+<MENU_INSERTION nom="body"/>
+<MENU_INSERTION nom="div"/>
+</MENU>
+<MENU nom="Layout">
+<MENU_INSERTION nom="hr"/>
+<MENU_INSERTION nom="table"/>
+<MENU_INSERTION nom="tr"/>
+<MENU_INSERTION nom="td"/>
+</MENU>
+<MENU nom="Elements">
+<MENU_INSERTION nom="object"/>
+<MENU_INSERTION nom="param"/>
+</MENU>
+<MENU nom="Text">
+<MENU_INSERTION nom="title"/>
+<MENU_INSERTION nom="br"/>
+<MENU_INSERTION nom="p"/>
+<MENU_INSERTION nom="a"/>
+<SEPARATEUR/>
+<MENU_INSERTION nom="h1"/>
+<MENU_INSERTION nom="h2"/>
+<MENU_INSERTION nom="h3"/>
+<MENU_INSERTION nom="h4"/>
+<MENU_INSERTION nom="h5"/>
+<MENU_INSERTION nom="h6"/>
+</MENU>
+</MENUS>
+
+<AFFICHAGE_NOEUDS>
+<AFFICHAGE_ELEMENT element="br" type="vide">
+<PARAMETRE nom="attributsVisibles" valeur="true"/>
+</AFFICHAGE_ELEMENT>
+<AFFICHAGE_ELEMENT element="hr" type="vide">
+<PARAMETRE nom="attributsVisibles" valeur="true"/>
+</AFFICHAGE_ELEMENT>
+<AFFICHAGE_ELEMENT element="title" type="string">
+<PARAMETRE nom="attributsVisibles" valeur="true"/>
+</AFFICHAGE_ELEMENT>
+<AFFICHAGE_ELEMENT element="h1" type="zone">
+<PARAMETRE nom="attributsVisibles" valeur="true"/>
+</AFFICHAGE_ELEMENT>
+<AFFICHAGE_ELEMENT element="h2" type="zone">
+<PARAMETRE nom="attributsVisibles" valeur="true"/>
+</AFFICHAGE_ELEMENT>
+<AFFICHAGE_ELEMENT element="h3" type="zone">
+<PARAMETRE nom="attributsVisibles" valeur="true"/>
+</AFFICHAGE_ELEMENT>
+<AFFICHAGE_ELEMENT element="h4" type="zone">
+<PARAMETRE nom="attributsVisibles" valeur="true"/>
+</AFFICHAGE_ELEMENT>
+<AFFICHAGE_ELEMENT element="h5" type="zone">
+<PARAMETRE nom="attributsVisibles" valeur="true"/>
+</AFFICHAGE_ELEMENT>
+<AFFICHAGE_ELEMENT element="h6" type="zone">
+<PARAMETRE nom="attributsVisibles" valeur="true"/>
+</AFFICHAGE_ELEMENT>
+<AFFICHAGE_ELEMENT element="p" type="zone">
+<PARAMETRE nom="attributsVisibles" valeur="true"/>
+</AFFICHAGE_ELEMENT>
+<AFFICHAGE_ELEMENT element="a" type="vide">
+<PARAMETRE nom="attributsVisibles" valeur="true"/>
+</AFFICHAGE_ELEMENT>
+<AFFICHAGE_ELEMENT element="td" type="zone">
+<PARAMETRE nom="attributsVisibles" valeur="true"/>
+</AFFICHAGE_ELEMENT>
+<AFFICHAGE_ELEMENT element="tr" type="zone">
+<PARAMETRE nom="attributsVisibles" valeur="true"/>
+<PARAMETRE nom="titreAtt" valeur=""/>
+</AFFICHAGE_ELEMENT>
+<AFFICHAGE_ELEMENT element="table" type="tabletexte">
+<PARAMETRE nom="type" valeur="table"/>
+<PARAMETRE nom="trTag" valeur="tr"/>
+<PARAMETRE nom="tdTag" valeur="td"/>
+<PARAMETRE nom="thTag" valeur="th"/>
+<PARAMETRE nom="colspanAttr" valeur="colspan"/>
+<PARAMETRE nom="rowspanAttr" valeur="rowspan"/>
+</AFFICHAGE_ELEMENT>
+<AFFICHAGE_ELEMENT element="param" type="vide">
+<PARAMETRE nom="attributsVisibles" valeur="true"/>
+</AFFICHAGE_ELEMENT>
+<AFFICHAGE_ELEMENT element="object" type="formulaire">
+<PARAMETRE nom="attributsVisibles" valeur="true"/>
+<PARAMETRE nom="titreAtt" valeur="classid"/>
+</AFFICHAGE_ELEMENT>
+<AFFICHAGE_ELEMENT element="style" type="zone"/>
+<AFFICHAGE_ELEMENT element="head" type="zone">
+<PARAMETRE nom="attributsVisibles" valeur="true"/>
+</AFFICHAGE_ELEMENT>
+<AFFICHAGE_ELEMENT element="div" type="zone">
+<PARAMETRE nom="titreAtt" valeur=""/>
+</AFFICHAGE_ELEMENT>
+<AFFICHAGE_ELEMENT element="body" type="zone">
+<PARAMETRE nom="titreAtt" valeur=""/>
+</AFFICHAGE_ELEMENT>
+<AFFICHAGE_ELEMENT element="html" type="division">
+<PARAMETRE nom="attributsVisibles" valeur="true"/>
+</AFFICHAGE_ELEMENT>
+</AFFICHAGE_NOEUDS>
+
+<STRINGS>
+<DESCRIPTION_CONFIG>Pythics XHTML</DESCRIPTION_CONFIG>
+<STRINGS_ELEMENT element="br">
+<TITRE>line break</TITRE>
+</STRINGS_ELEMENT>
+<STRINGS_ELEMENT element="title">
+<TITRE>title</TITRE>
+</STRINGS_ELEMENT>
+<STRINGS_ELEMENT element="hr">
+<TITRE>--- horizontal rule ---</TITRE>
+<STRINGS_ATTRIBUT attribut="width">
+<TITRE>width</TITRE>
+</STRINGS_ATTRIBUT>
+</STRINGS_ELEMENT>
+<STRINGS_ELEMENT element="h1">
+<TITRE>heading 1</TITRE>
+</STRINGS_ELEMENT>
+<STRINGS_ELEMENT element="h2">
+<TITRE>heading 2</TITRE>
+</STRINGS_ELEMENT>
+<STRINGS_ELEMENT element="h3">
+<TITRE>heading 3</TITRE>
+</STRINGS_ELEMENT>
+<STRINGS_ELEMENT element="h4">
+<TITRE>heading 4</TITRE>
+</STRINGS_ELEMENT>
+<STRINGS_ELEMENT element="h5">
+<TITRE>heading 5</TITRE>
+</STRINGS_ELEMENT>
+<STRINGS_ELEMENT element="h6">
+<TITRE>heading 6</TITRE>
+</STRINGS_ELEMENT>
+<STRINGS_ELEMENT element="p">
+<TITRE>paragraph text</TITRE>
+</STRINGS_ELEMENT>
+<STRINGS_ELEMENT element="a">
+<TITRE>hyperlink</TITRE>
+</STRINGS_ELEMENT>
+<STRINGS_ELEMENT element="td">
+<TITRE>table item</TITRE>
+<STRINGS_ATTRIBUT attribut="class">
+<TITRE>class</TITRE>
+</STRINGS_ATTRIBUT>
+<STRINGS_ATTRIBUT attribut="width">
+<TITRE>width</TITRE>
+</STRINGS_ATTRIBUT>
+<STRINGS_ATTRIBUT attribut="rowspan">
+<TITRE>row span</TITRE>
+</STRINGS_ATTRIBUT>
+<STRINGS_ATTRIBUT attribut="colspan">
+<TITRE>column span</TITRE>
+</STRINGS_ATTRIBUT>
+</STRINGS_ELEMENT>
+<STRINGS_ELEMENT element="tr">
+<TITRE>table row</TITRE>
+<STRINGS_ATTRIBUT attribut="class">
+<TITRE>class</TITRE>
+</STRINGS_ATTRIBUT>
+</STRINGS_ELEMENT>
+<STRINGS_ELEMENT element="div">
+<TITRE>div</TITRE>
+<STRINGS_ATTRIBUT attribut="class">
+<TITRE>class</TITRE>
+</STRINGS_ATTRIBUT>
+</STRINGS_ELEMENT>
+<STRINGS_ELEMENT element="table">
+<TITRE>table</TITRE>
+<STRINGS_ATTRIBUT attribut="class">
+<TITRE>class</TITRE>
+</STRINGS_ATTRIBUT>
+<STRINGS_ATTRIBUT attribut="width">
+<TITRE>width</TITRE>
+</STRINGS_ATTRIBUT>
+</STRINGS_ELEMENT>
+<STRINGS_ELEMENT element="param">
+<TITRE>parameter</TITRE>
+<STRINGS_ATTRIBUT attribut="name">
+<TITRE>name</TITRE>
+</STRINGS_ATTRIBUT>
+<STRINGS_ATTRIBUT attribut="value">
+<TITRE>value</TITRE>
+</STRINGS_ATTRIBUT>
+</STRINGS_ELEMENT>
+<STRINGS_ELEMENT element="object">
+<TITRE>object</TITRE>
+<STRINGS_ATTRIBUT attribut="class">
+<TITRE>class</TITRE>
+</STRINGS_ATTRIBUT>
+<STRINGS_ATTRIBUT attribut="classid">
+<TITRE>classid</TITRE>
+</STRINGS_ATTRIBUT>
+<STRINGS_ATTRIBUT attribut="id">
+<TITRE>id</TITRE>
+</STRINGS_ATTRIBUT>
+<STRINGS_ATTRIBUT attribut="width">
+<TITRE>width</TITRE>
+</STRINGS_ATTRIBUT>
+<STRINGS_ATTRIBUT attribut="height">
+<TITRE>height</TITRE>
+</STRINGS_ATTRIBUT>
+</STRINGS_ELEMENT>
+<STRINGS_ELEMENT element="style">
+<TITRE>style</TITRE>
+</STRINGS_ELEMENT>
+<STRINGS_ELEMENT element="head">
+<TITRE>head</TITRE>
+</STRINGS_ELEMENT>
+<STRINGS_ELEMENT element="body">
+<TITRE>body</TITRE>
+<STRINGS_ATTRIBUT attribut="class">
+<TITRE>class</TITRE>
+</STRINGS_ATTRIBUT>
+</STRINGS_ELEMENT>
+<STRINGS_ELEMENT element="html">
+<TITRE>html</TITRE>
+</STRINGS_ELEMENT>
+</STRINGS>
+</CONFIG_JAXE>

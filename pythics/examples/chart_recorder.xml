@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?><!--  
+Copyright 2012 - 2014 Brian R. D'Urso
+
+This file is part of Python Instrument Control System, also known as Pythics. 
+
+Pythics is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. 
+
+Pythics is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with Pythics. If not, see <http://www.gnu.org/licenses/>.
+-->
+<html>
+  <head>
+    <title>Chart Recorder</title>
+    <style type="text/css">
+      body {background-color: #eeeeee; margin: 10px; padding: 5px}
+      a {align: left; color: black; font-size: 8pt; font-family: default; font-style: normal; font-weight: normal}
+      p {align: left; color: black; font-size: 16pt; font-family: default; font-style: normal; font-weight: normal}
+      h1 {align: center; font-size: 18pt; font-family: default; font-style: normal; font-weight: bold}
+      h2 {align: left; font-size: 16pt; font-family: default; font-style: normal; font-weight: normal}
+      h3 {align: left; font-size: 14pt; font-family: default; font-style: normal; font-weight: normal}
+      h4 {align: left; font-size: 12pt; font-family: default; font-style: normal; font-weight: normal}
+      h5 {align: left; font-size: 10pt; font-family: default; font-style: normal; font-weight: normal}
+      h6 {align: left; font-size: 8pt; font-family: default; font-style: normal; font-weight: normal}
+      object {align: left}
+      table {align: center}
+      .compact {padding: 0px}
+    </style>
+  </head>
+  
+  <body>
+    <h1>Chart Recorder</h1>
+    
+    <object classid="mpl.Chart2D" height="500" id="data_chart" width="100%">
+      <param name="plots" value="3"/>
+      <param name="memory" value="growable"/>
+      <param name="length" value="1000"/>
+      <param name="fast_scroll" value="True"/>
+    </object>
+    
+    
+    <table width="100%">
+      <tr><td width="25%">
+          <h6>voltage 1 (V)</h6>
+          <object classid="NumBox" id="voltage_1" width="200">
+            <param name="digits" value="3"/>
+            <param name="read_only" value="True"/>
+          </object>
+        </td><td width="25%">
+          <h6>voltage 2 (V)</h6>
+          <object classid="NumBox" id="voltage_2" width="200">
+            <param name="digits" value="3"/>
+            <param name="read_only" value="True"/>
+          </object>
+        </td><td width="25%">
+          <h6>voltage 3 (V)</h6>
+          <object classid="NumBox" id="voltage_3" width="200">
+            <param name="digits" value="3"/>
+            <param name="read_only" value="True"/>
+          </object>
+        </td><td width="25%">
+          <h6>voltage 4 (V)</h6>
+          <object classid="NumBox" id="voltage_4" width="200">
+            <param name="digits" value="3"/>
+            <param name="read_only" value="True"/>
+          </object>
+        </td></tr>
+    </table>
+    <hr/>
+    
+    <table width="100%">
+      <tr><td width="25%">
+          <object classid="Button" id="open_close" width="100%">
+            <param name="label" value="Open/Close Instruments"/>
+            <param name="actions" value="{'toggled': 'chart_recorder.open_close_instruments'}"/>
+            <param name="toggle" value="True"/>
+            <param name="save" value="False"/>
+          </object>
+        </td><td width="25%">
+          <object classid="RunButton" id="start_stop" width="100%">
+            <param name="actions" value="{'run': 'chart_recorder.run'}"/>
+          </object>
+        </td><td width="25%">
+          <object classid="Button" width="100%">
+            <param name="label" value="Load Data"/>
+            <param name="actions" value="{'clicked': 'chart_recorder.load_data'}"/>
+          </object>
+        </td><td width="25%">
+          <object classid="Button" width="100%">
+            <param name="label" value="Save Data"/>
+            <param name="actions" value="{'clicked': 'chart_recorder.save_data'}"/>
+          </object>
+        </td></tr>
+      <tr><td colspan="2">
+          <h6>dwell time (s)</h6>
+          <object classid="NumBox" id="dwell_time" width="200">
+            <param name="digits" value="3"/>
+            <param name="minimum" value="0.001"/>
+          </object>
+        </td><td colspan="2">
+          <h6>voltmeter address</h6>
+          <object classid="TextBox" id="voltmeter_address" width="200">
+                              </object>
+        </td></tr><tr><td colspan="4">
+          <object classid="FilePicker" id="data_filename" width="100%">
+            <param name="save" value="True"/>
+          </object>
+        </td></tr>
+    </table>
+    <div class="compact">
+      <object classid="MessageDialog" id="error_dialog" width="0%">
+        <param name="title" value="Error"/>
+        <param name="severity" value="critical"/>
+        <param name="ok_button" value="True"/>
+      </object>
+      <br/>
+      <object classid="ScriptLoader" width="0%">
+        <param name="filename" value="chart_recorder"/>
+        <param name="actions" value="{'initialized': 'chart_recorder.initialize'}"/>
+      </object>
+      <br/>
+      <object classid="ParameterLoader" width="0%">
+        <param name="filename" value="chart_recorder_defaults.txt"/>
+      </object>
+    </div>
+    
+  </body>
+</html>

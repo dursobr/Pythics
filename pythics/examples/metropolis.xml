@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?><!--  
+Copyright 2012 - 2014 Brian R. D'Urso
+
+This file is part of Python Instrument Control System, also known as Pythics. 
+
+Pythics is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. 
+
+Pythics is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with Pythics. If not, see <http://www.gnu.org/licenses/>.
+--><html>
+  <head>
+    <title>Metropolis</title>
+    <style type="text/css">
+      body {background-color: #eeeeee; margin: 10px; padding: 5px}
+      a {align: left; color: black; font-size: 8pt; font-family: default; font-style: normal; font-weight: normal}
+      p {align: left; color: black; font-size: 8pt; font-family: default; font-style: normal; font-weight: normal}
+      h1 {align: center; font-size: 18pt; font-family: default; font-style: normal; font-weight: bold}
+      h2 {align: left; font-size: 16pt; font-family: default; font-style: normal; font-weight: normal}
+      h3 {align: left; font-size: 14pt; font-family: default; font-style: normal; font-weight: normal}
+      h4 {align: left; font-size: 12pt; font-family: default; font-style: normal; font-weight: normal}
+      h5 {align: left; font-size: 10pt; font-family: default; font-style: normal; font-weight: normal}
+      h6 {align: left; font-size: 8pt; font-family: default; font-style: normal; font-weight: normal}
+      object {align: left}
+      table {align: center}
+    </style>
+  </head>
+  
+  <body>
+    <h1>Metropolis Algorithm and Ising Model</h1>
+    
+    <object classid="mpl.Plot2D" height="400" id="plot_1" width="50%"/>
+    
+    <object classid="mpl.Plot2D" height="400" id="plot_2" width="50%"/>
+    
+    <br/>
+    
+    <table width="100%">
+      <tr><td width="50%">
+          <object classid="Button" id="stop" width="100%">
+            <param name="toggle" value="True"/>
+            <param name="label" value="Stop"/>
+          </object>
+        </td><td width="50%">
+          <object classid="Button" width="100%">
+            <param name="label" value="Clear"/>
+            <param name="actions" value="{'clicked': 'metropolis.clear'}"/>
+          </object>
+        </td></tr>
+    </table>
+    <hr/>
+    
+    <h3>Metropolis</h3> 
+    <table width="100%">
+      <tr><td>
+          <h6>L</h6>
+          <object classid="NumBox" id="metropolis_L" width="100%">
+            <param name="digits" value="0"/>
+            <param name="minimum" value="1"/>
+          </object>
+        </td><td>
+          <h6>N</h6>
+          <object classid="NumBox" id="metropolis_N" width="100%">
+            <param name="digits" value="0"/>
+            <param name="minimum" value="1"/>
+          </object>
+        </td><td>
+          <h6>N_thermalize</h6>
+          <object classid="NumBox" id="metropolis_N_thermalize" width="100%">
+            <param name="digits" value="0"/>
+            <param name="minimum" value="1"/>
+          </object>
+        </td><td>
+          <h6>T</h6>
+          <object classid="NumBox" id="metropolis_T" width="100%">
+            <param name="digits" value="6"/>
+            <param name="minimum" value="0"/>
+          </object>
+        </td><td>
+          <object classid="Button" width="100%">
+            <param name="label" value="Run 1(a)"/>
+            <param name="actions" value="{'clicked': 'metropolis.metropolis_run'}"/>
+          </object>
+        </td></tr>
+    </table>
+    <hr/>
+    
+    <h3>Magnetization</h3> 
+    <table width="100%">
+      <tr><td>
+          <h6>L</h6>
+          <object classid="NumBox" id="magnetization_L" width="100%">
+            <param name="digits" value="0"/>
+            <param name="minimum" value="1"/>
+          </object>
+        </td><td>
+          <h6>N</h6>
+          <object classid="NumBox" id="magnetization_N" width="100%">
+            <param name="digits" value="0"/>
+            <param name="minimum" value="1"/>
+          </object>
+        </td><td>
+          <h6>N_thermalize</h6>
+          <object classid="NumBox" id="magnetization_N_thermalize" width="100%">
+            <param name="digits" value="0"/>
+            <param name="minimum" value="1"/>
+          </object>
+        </td><td>
+          <object classid="Button" width="100%">
+            <param name="label" value="Run 1(b)"/>
+            <param name="actions" value="{'clicked': 'metropolis.magnetization_run'}"/>
+          </object>
+        </td></tr><tr><td>
+          <h6>T_0</h6>
+          <object classid="NumBox" id="magnetization_T_0" width="100%">
+            <param name="digits" value="6"/>
+            <param name="minimum" value="0"/>
+          </object></td><td>
+          <h6>T_F</h6>
+          <object classid="NumBox" id="magnetization_T_F" width="100%">
+            <param name="digits" value="6"/>
+            <param name="minimum" value="0"/>
+          </object></td><td>
+          <h6>N_T</h6>
+          <object classid="NumBox" id="magnetization_N_T" width="100%">
+            <param name="digits" value="0"/>
+            <param name="minimum" value="1"/>
+          </object></td><td>
+                  </td></tr>
+    </table>
+    <hr/>
+    
+    <h3>Simulated Annealing</h3> 
+    <table width="100%">
+      <tr><td>
+          <h6>L</h6>
+          <object classid="NumBox" id="sa_L" width="100%">
+            <param name="digits" value="0"/>
+            <param name="minimum" value="1"/>
+          </object>
+        </td><td>
+          <h6>T_0</h6>
+          <object classid="NumBox" id="sa_T_0" width="100%">
+            <param name="digits" value="6"/>
+            <param name="minimum" value="0"/>
+          </object>
+        </td><td>
+          <h6>T_F</h6>
+          <object classid="NumBox" id="sa_T_F" width="100%">
+            <param name="digits" value="6"/>
+            <param name="minimum" value="0"/>
+          </object>
+        </td><td>
+          <h6>N_T</h6>
+          <object classid="NumBox" id="sa_N_T" width="100%">
+            <param name="digits" value="0"/>
+            <param name="minimum" value="1"/>
+          </object>
+        </td><td>
+          <object classid="Button" width="100%">
+            <param name="label" value="Run 2"/>
+            <param name="actions" value="{'clicked': 'metropolis.sa_run'}"/>
+          </object>
+        </td></tr>
+    </table>
+    <hr/>
+    
+    <object classid="TextIOBox" height="100" id="messages" width="100%"/>
+    
+    <hr/>
+    
+    <object classid="Shell" height="200" id="shell" width="100%">
+      <param name="actions" value="{'initialized': 'metropolis.initialize_shell'}"/>
+    </object>
+    
+    <br/>
+    
+    <object classid="ScriptLoader" width="0%">
+      <param name="filename" value="metropolis"/>
+    </object>
+    
+    <object classid="ParameterLoader" width="0%">
+      <param name="filename" value="defaults.txt"/>
+    </object>
+    
+  </body>
+</html>

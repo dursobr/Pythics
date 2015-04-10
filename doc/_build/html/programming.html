@@ -1,0 +1,387 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Programming &mdash; Pythics 0.5.2 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.5.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Pythics 0.5.2 documentation" href="index.html" />
+    <link rel="next" title="Examples" href="examples.html" />
+    <link rel="prev" title="Getting started" href="getting_started.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="examples.html" title="Examples"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="getting_started.html" title="Getting started"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Pythics 0.5.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="programming">
+<span id="id1"></span><h1>Programming<a class="headerlink" href="#programming" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<p>While the underlying architecture of Pythics is generally hidden from the user,
+some knowledge of the structure may be helpful in understanding how to build and
+run programs under Pythics. When running user code, Pythics runs as a primary
+process which controls the GUI, and an additional process for each loaded user
+<em>program</em>, which we will refer to as a virtual instrument (VI). The GUI process
+itself uses multiple threads to handle the GUI and communication with the VI
+subprocess, while each VI has one primary thread and possibly additional timer
+threads in a subprocess.</p>
+<p>Each VI subprocess is actually a true separate process handled with the Python
+multiprocessing package. As a result, the VI subprocesses and GUI can generally
+run without blocking each other, and the VI subprocesses can even be
+distributed over multiple processors or cores as supported by the operating
+system. Additionally, even if one VI subprocess crashes, for example due to an
+error accessing low-level hardware, the Pythics GUI and other VIs should be
+undisturbed. Pythics handles all communication between the VI subprocesses and
+the GUI process, and provides means of sharing data between VIs.</p>
+<div class="figure align-center">
+<img alt="_images/process_diagram.png" src="_images/process_diagram.png" style="width: 80%;" />
+<p class="caption">Data flow betweeen processes and threads in Pythics.</p>
+</div>
+<p>Writing code for a new VI in Pythics generally consists of writing two
+components:</p>
+<ol class="arabic simple">
+<li>A single XML file (a subset of XHTML) to layout the graphical user interface.</li>
+<li>One or more text files containing Python code. These give functionality to
+the VI.</li>
+</ol>
+<p>The XML file is loaded by the GUI process in order to set up the interface,
+while the Python code files are loaded and ultimately executed in a VI
+subprocess. For each XML file loaded a new tab will be created in the
+Pythics window which holds the corresponding VI GUI and a VI subprocess which
+handles the associated functionality.</p>
+<p>The XML file specifies the layout for the controls in the GUI with a structure
+very similar to that used to describe the layout of a web page. Simple tables,
+styles, alignments, etc. of text and controls are supported. In the XML file,
+parameters may also be passed to controls to setup the behavior of the
+controls. The XML file can also direct Pythics to load files which contain
+Python code, for example in order to respond to a button press.</p>
+<p>The second VI component is one or more text files which contain Python code
+and are loaded based on requests in the XML file. The Python code typically
+takes the form of a series of Python functions with a particular format. Each
+function to be called from the GUI should take an indefinite number of keyword
+arguments. In practice, when a GUI control calls a function from one of these
+files, Pythics passes the function an object for each control in the GUI with
+a <cite>id</cite> attribute. The <cite>id</cite> attribute is used as the name of the
+corresponding keyword argument. Additional functions or other code may be
+included in the Python code files for use within a VI subprocess. It may sound
+complex, but the examples show that this actually a simple and effective
+protocol.</p>
+</div>
+<div class="section" id="xml-html-file-format">
+<h2>XML/HTML File Format<a class="headerlink" href="#xml-html-file-format" title="Permalink to this headline">¶</a></h2>
+<p>The file format which describes the GUI layout in Pythics is an XML-compliant
+HTML format, similar to a subset of XHTML. Elements (text, controls, etc.)
+within the XML file are controlled by up to three sources within the XML file
+in addition to the document structure itself: a cascading style sheet (CSS)
+which specifies element <em>properties</em> and element <em>attributes</em>. The
+CSS is located in a <cite>&lt;style type=&#8217;text/css&#8217;&gt;</cite> element in the document
+<cite>&lt;head&gt;</cite> , and will be described in the section below.</p>
+<p>A nearly minimal XML document for Pythics has a <cite>head</cite> with <cite>title</cite> and <cite>style</cite>
+elements, and a <cite>body</cite> which contains the controls and other GUI layout
+elements:</p>
+<div class="highlight-python"><pre>&lt;html&gt;
+    &lt;head&gt;
+        &lt;title&gt;Hello World&lt;/title&gt;
+        &lt;style type='text/css'&gt;
+            &lt;!-- Style Sheet (CSS) goes here --&gt;
+        &lt;/style&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+        &lt;h1&gt;Hello World&lt;/h1&gt;
+        &lt;!-- more elements go here for GUI layout --&gt;
+    &lt;/body&gt;
+&lt;/html&gt;</pre>
+</div>
+<p>The <cite>head</cite> is actually completely optional, although the defaults that are used
+without a <cite>head</cite> are typically not desirable.</p>
+<div class="section" id="html-elements">
+<h3>HTML Elements<a class="headerlink" href="#html-elements" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><cite>&lt;html&gt;</cite>: begin and end <cite>html</cite> tags should surround the whole document</li>
+<li><cite>&lt;head&gt;</cite>: used to surround the header of the document, which contains <cite>title</cite>
+<cite>style</cite> elements</li>
+<li><cite>&lt;style type=&#8217;text/css&#8217;&gt;</cite>:</li>
+<li><cite>&lt;title&gt;</cite>: The text between <cite>title</cite> start and end tags will be used as the
+VI tab title and the window title when the VI tab is selected</li>
+<li><cite>&lt;body&gt;</cite>: surrounds the main body of the html document (everything but the
+document header)</li>
+<li><cite>&lt;h1&gt;</cite>, <cite>&lt;h2&gt;</cite>, ... <cite>&lt;h6&gt;</cite>: text placed on its own line, typically used for
+VI or section names</li>
+<li><cite>&lt;p&gt;</cite>: text which is not on its own line</li>
+<li><cite>&lt;hr/&gt;</cite>: insert a horizontal line, typeically as a separator between sections
+(no closing tag needed)</li>
+<li><cite>&lt;br/&gt;</cite>: insert a line break to start the next elements on a new line (no
+closing tag needed)</li>
+<li><cite>&lt;table&gt;</cite>: use a table to arrange elements</li>
+<li><cite>&lt;object&gt;</cite>: used to insert a control object into a VI interface, see details
+below</li>
+</ul>
+</div>
+<div class="section" id="cascading-style-sheets-css">
+<h3>Cascading Style Sheets (CSS)<a class="headerlink" href="#cascading-style-sheets-css" title="Permalink to this headline">¶</a></h3>
+<p>A VI&#8217;s appearance can be specified in a Cascading Style Sheet (CSS), enclosed
+between <cite>&lt;style type=&#8217;text/css&#8217;&gt;</cite> and  <cite>&lt;/style&gt;</cite> tags within the document
+<cite>head</cite>. The style sheet consist of a series of entries separated by white space
+(new lines or spaces) of the form:
+<em>selector{property1:value1; property2:value2}</em>
+where there may be an arbitrary number of <em>property:value</em> pairs separated
+by semicolons. The available properties and example values are given below.</p>
+<p>The <em>selector</em> in a CSS entry may take one of five forms. In order of increasing
+specificity, these are:  <em>tag</em>, .*class*, <em>tag</em>.*class*, <em>#id</em>, and
+<em>tag#id</em>. When Pythics encounter an Pythics encounters an XML element in the
+body of the document, it searches for a style <em>property</em> of a given <em>element</em>
+as follows, where the first match encountered is used:</p>
+<ol class="arabic simple">
+<li>If the element has a <cite>id</cite> attribute: An entry in the style sheet of the form
+<em>tag#id</em>, where <em>tag</em> is replaced with the element&#8217;s <em>tag</em>, and <em>id</em> is
+replaced with the element&#8217;s <cite>id</cite> attribute.</li>
+<li>If the element has a <cite>id</cite> attribute: An entry in the style sheet of the form
+<em>#id</em>, where <em>id</em> is replaced with the element&#8217;s <cite>id</cite> attribute.</li>
+<li>If the element has a <cite>class</cite> attribute: An entry in the style sheet of the
+form <em>tag.class</em>, where <em>tag</em> is replaced with the element&#8217;s <em>tag</em>, and
+<em>class</em> is replaced with the element&#8217;s <em>class</em> attribute.</li>
+<li>If the element has a <cite>class</cite> attribute: An entry in the style sheet of the
+form <em>.class</em>, where <em>class</em> is replaced with the element&#8217;s <em>class</em>
+attribute.</li>
+<li>An entry matching the element <em>tag</em>.</li>
+<li>If no entry has been found, the process stated above is repeated for the
+parent element containing the original element. As long as no entry is found,
+the search keeps proceeding to parent elements until the <cite>body</cite> tag is
+reached, which contains a default value for every property.</li>
+</ol>
+<p>The following properties can be set in style sheets. Not all properties have
+meaning for all element types.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="24%" />
+<col width="42%" />
+<col width="15%" />
+<col width="19%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Property</th>
+<th class="head">Description</th>
+<th class="head">Default</th>
+<th class="head">Applies to</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><cite>align</cite></td>
+<td>Alignment of element</td>
+<td><cite>left</cite></td>
+<td>all elements</td>
+</tr>
+<tr class="row-odd"><td><cite>background-color</cite></td>
+<td>RGB background color</td>
+<td><cite>#eeeeee</cite></td>
+<td>body only</td>
+</tr>
+<tr class="row-even"><td><cite>margin</cite></td>
+<td>Margin on left and right side</td>
+<td><cite>10px</cite></td>
+<td>body only</td>
+</tr>
+<tr class="row-odd"><td><cite>padding</cite></td>
+<td>Space around element</td>
+<td><cite>5px</cite></td>
+<td>all elements</td>
+</tr>
+<tr class="row-even"><td><cite>color</cite></td>
+<td>Text color</td>
+<td><cite>black</cite></td>
+<td>text elements</td>
+</tr>
+<tr class="row-odd"><td><cite>font-size</cite></td>
+<td>Text size</td>
+<td><cite>12pt</cite></td>
+<td>text elements</td>
+</tr>
+<tr class="row-even"><td><cite>font-family</cite></td>
+<td>Family</td>
+<td><cite>default</cite></td>
+<td>text elements</td>
+</tr>
+<tr class="row-odd"><td><cite>font-style</cite></td>
+<td>Style</td>
+<td><cite>normal</cite></td>
+<td>text elements</td>
+</tr>
+<tr class="row-even"><td><cite>font-weight</cite></td>
+<td>Weight</td>
+<td><cite>normal</cite></td>
+<td>text elements</td>
+</tr>
+</tbody>
+</table>
+<p>Here is an example style sheet:</p>
+<div class="highlight-python"><pre>&lt;style type='text/css'&gt;
+body {background-color: #eeeeee; margin: 10px; padding: 5px}
+a {align: left; color: black; font-size: 8pt; font-family: default; font-style: normal; font-weight: normal}
+p {align: left; color: black; font-size: 8pt; font-family: default; font-style: normal; font-weight: normal}
+h1 {align: center; font-size: 22pt; font-family: default; font-style: normal; font-weight: bold}
+h2 {align: left; font-size: 18pt; font-family: default; font-style: normal; font-weight: normal}
+h3 {align: left; font-size: 14pt; font-family: default; font-style: normal; font-weight: normal}
+h4 {align: left; font-size: 12pt; font-family: default; font-style: normal; font-weight: normal}
+h5 {align: left; font-size: 10pt; font-family: default; font-style: normal; font-weight: normal}
+h6 {align: left; font-size: 8pt; font-family: default; font-style: normal; font-weight: normal}
+object {align: left}
+table {align: center}
+.cells {align: left; padding: 1px}
+.compact {padding: 0px}
+&lt;/style&gt;
+</pre>
+</div>
+</div>
+</div>
+<div class="section" id="controls">
+<h2>Controls<a class="headerlink" href="#controls" title="Permalink to this headline">¶</a></h2>
+<p>object <em>parameters</em> (for controls (<cite>object</cite>) elements only)</p>
+<p>A quick example illustrates the differences between object attributes and
+parameters:</p>
+<div class="highlight-python"><pre>&lt;object classid='NumBox' id='voltage' width='200'&gt;
+    &lt;param name='digits' value='3'/&gt;
+    &lt;param name='read_only' value='True'/&gt;
+&lt;/object&gt;</pre>
+</div>
+<p>In this case, we refer to <cite>id</cite>, <cite>classid</cite>, <cite>width</cite> as <cite>attributes</cite> of <cite>object</cite>,
+while we refer to <cite>digits</cite> and <cite>read_only</cite> as <cite>parameters</cite> of <cite>object</cite>, since
+they are in <cite>param</cite> elements. Note that <cite>param</cite> elements can only be present
+inside of <cite>object</cite> elements.</p>
+<div class="section" id="common-attributes">
+<h3>Common Attributes<a class="headerlink" href="#common-attributes" title="Permalink to this headline">¶</a></h3>
+<p>Attributes:</p>
+<ul class="simple">
+<li><cite>classid</cite>: A string indicating the type of control to be inserted. For
+standard controls, only the name of the control is needed. For custom
+controls, it should be of the form &#8216;module.class&#8217;, where <cite>module</cite> is the name
+of the module to be imported to find the control class.</li>
+<li><cite>id</cite>: A string used for identifying the control in the html style sheet and
+used as the name of the keyword argument when the control is passed to VI
+Python code.</li>
+<li><cite>width</cite>: A string giving the width of the control in pixels (default) or in
+percent of the window width if the string ends in <cite>%</cite>.</li>
+<li><cite>height</cite>: A string giving the height of the control in pixels. Many controls
+have a reasonable default height so this attribute may not be needed for all
+controls.</li>
+</ul>
+</div>
+<div class="section" id="parameters-and-python-api">
+<h3>Parameters and Python API<a class="headerlink" href="#parameters-and-python-api" title="Permalink to this headline">¶</a></h3>
+<p>See automatically generated API documetation, which lists parameters for
+specifying the behavior of each control from the html file as well as the
+methods and properties of the control accessible from a VI&#8217;s Python code.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Programming</a><ul>
+<li><a class="reference internal" href="#overview">Overview</a></li>
+<li><a class="reference internal" href="#xml-html-file-format">XML/HTML File Format</a><ul>
+<li><a class="reference internal" href="#html-elements">HTML Elements</a></li>
+<li><a class="reference internal" href="#cascading-style-sheets-css">Cascading Style Sheets (CSS)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#controls">Controls</a><ul>
+<li><a class="reference internal" href="#common-attributes">Common Attributes</a></li>
+<li><a class="reference internal" href="#parameters-and-python-api">Parameters and Python API</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="getting_started.html"
+                        title="previous chapter">Getting started</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="examples.html"
+                        title="next chapter">Examples</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/programming.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="examples.html" title="Examples"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="getting_started.html" title="Getting started"
+             >previous</a> |</li>
+        <li><a href="index.html">Pythics 0.5.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Brian R. D&#39;Urso.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
