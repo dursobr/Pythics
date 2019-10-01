@@ -1,5 +1,5 @@
 <!--                                                                        -->
-<!-- Copyright 2008 - 2013 Brian R. D'Urso                                  -->
+<!-- Copyright 2008 - 2019 Brian R. D'Urso                                  -->
 <!--                                                                        -->
 <!-- This file is part of Python Instrument Control System,                 -->
 <!-- also known as Pythics.                                                 -->
@@ -28,14 +28,16 @@
     <param name='label' value='Run'/>
     <param name='actions' value="{'clicked': 'hello_world.run'}"/>
 </object>
+
 <br/>
 
 <object classid='TextBox' id='result' width='200'>
 </object>
+
 <br/>
 
-<object classid='ScriptLoader' width='100%'>
-    <param name='filename' value='hello_world'/>
+<object classid="Main" id="main" width="0%">
+  <param name="python_filename" value="hello_world"/>
 </object>
 
 </body>

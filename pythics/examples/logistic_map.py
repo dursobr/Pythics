@@ -21,13 +21,26 @@
 #
 # load libraries
 #
+import logging
 import numpy as np
+
+
+# setup the logger
+logger = logging.getLogger('log')
+#logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 #
 # basic functionality: initialize, start, stop, clear
 #
 def initialize(shell, **kwargs):
+    # setup the logger
+    sh = logging.StreamHandler(kwargs['messages'])
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    sh.setFormatter(formatter)
+    logger.addHandler(sh)
+    # setup the python shell
     shell.interact(kwargs.copy())
     clear(**kwargs)
 
@@ -44,7 +57,7 @@ def clear(messages, plot_1, plot_2, multiple_mu_initial, multiple_mu_final, **kw
         aspect_ratio='auto')
     plot_2.set_plot_properties(
         title='Logistic Map',
-        x_label='mu',
+        x_label=r'$\mu$',
         y_label='x',
         x_scale='linear',
         y_scale='linear',
@@ -68,7 +81,7 @@ def run_single(single_x0, single_mu, single_N, stop, messages, plot_1, plot_2, *
     xs = np.zeros(N)
     ts = np.arange(N)
     # the calculation
-    messages.write('Starting calculation.\n')
+    logger.info('starting calculation')
     xs[0] = x0
     for i in range(N-1):
         xs[i+1] = mu*xs[i]*(1-xs[i])
@@ -77,7 +90,7 @@ def run_single(single_x0, single_mu, single_N, stop, messages, plot_1, plot_2, *
     plot_1.set_data('tx', data, rescale=True)
     # reset the stop button in case it was pushed
     stop.value = False
-    messages.write('Done.\n')
+    logger.info('done')
 
 
 def run_multiple(multiple_mu_initial, multiple_mu_final, multiple_mu_N_steps, 
@@ -96,7 +109,7 @@ def run_multiple(multiple_mu_initial, multiple_mu_final, multiple_mu_N_steps,
     image_data = np.zeros((N_bins, N_mu), dtype=np.uint8)
     plot_2.set_data('map', image_data)
     # the calculation
-    messages.write('Starting calculation.\n')
+    logger.info('starting calculation')
     data = np.column_stack((ts, xs))
     plot_1.set_data('tx', data, rescale=True)
     mus = np.linspace(mu_initial, mu_final, N_mu)
@@ -122,4 +135,4 @@ def run_multiple(multiple_mu_initial, multiple_mu_final, multiple_mu_N_steps,
     plot_2.set_data('map', image_data)
     # reset the stop button in case it was pushed5
     stop.value = False
-    messages.write('Done.\n')
+    logger.info('done')

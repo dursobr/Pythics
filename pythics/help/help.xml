@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?><!--  
-Copyright 2012 - 2014 Brian R. D'Urso
+Copyright 2012 - 2019 Brian R. D'Urso
 
 This file is part of Python Instrument Control System, also known as Pythics. 
 
@@ -26,10 +26,6 @@ Pythics is distributed in the hope that it will be useful, but WITHOUT ANY WARRA
   </head>
   
   <body>
-    <object classid="Import" id="inspect_master">
-      <param name="module" value="inspect"/>
-    </object>
-    
     <h1>Python Instrument Control System (Pythics)</h1>
     <h1>Help and Examples</h1>
     
@@ -40,28 +36,24 @@ Pythics is distributed in the hope that it will be useful, but WITHOUT ANY WARRA
     <a href="#introduction">Introduction</a><br/>
     <h3>Elements and PyQt Controls</h3>
     <a href="#basic">Basic Elements</a><br/>
+    <a href="#main">Main</a><br/>
     <a href="#button">Button</a><br/>
     <a href="#check_box">CheckBox</a><br/>
     <a href="#choice_box">ChoiceBox</a><br/>
     <a href="#choice_button">ChoiceButton</a><br/>
     <a href="#event_button">EventButton</a><br/>
-    <a href="#file_dialog">FileDialog</a><br/>
     <a href="#file_picker">FilePicker</a><br/>
     <a href="#global_action">GlobalAction</a><br/>
     <a href="#global_namespace">GlobalNamespace</a><br/>
     <a href="#global_trigger">GlobalTrigger</a><br/>
     <a href="#image">Image</a><br/>
     <a href="#image_button">ImageButton</a><br/>
-    <a href="#import">Import</a><br/>
-    <a href="#input_dialog">InputDialog</a><br/>
     <a href="#knob">Knob</a><br/>
-    <a href="#message_dialog">MessageDialog</a><br/>
     <a href="#meter">Meter</a><br/>
+    <a href="#metric_num_box">MetricNumBox</a><br/>
     <a href="#num_box">NumBox</a><br/>
-    <a href="#parameter_loader">ParameterLoader</a><br/>
     <a href="#radio_button_box">RadioButtonBox</a><br/>
     <a href="#run_button">RunButton</a><br/>
-    <a href="#script_loader">ScriptLoader</a><br/>
     <a href="#scroll_bar">ScrollBar</a><br/>
     <a href="#shell">Shell</a><br/>
     <a href="#sub_window">SubWindow</a><br/>
@@ -72,13 +64,8 @@ Pythics is distributed in the hope that it will be useful, but WITHOUT ANY WARRA
     <a href="#mpl_canvas">mpl.Canvas</a><br/>
     <a href="#mpl_plot_2d">mpl.Plot2D</a><br/>
     <a href="#mpl_chart_2d">mpl.Chart2D</a><br/>
-    <h3>PyQwt Controls</h3>
-    <a href="#qwt_chart">qwt.Chart</a><br/>
-    <a href="#qwt_gauge">qwt.Gauge</a><br/>
-    <a href="#qwt_knob">qwt.Knob</a><br/>
-    <a href="#qwt_plot">qwt.Plot</a><br/>
-    <a href="#qwt_point_line_plot">qwt.PointLinePlot</a><br/>
-    <a href="#qwt_slider">qwt.Slider</a><br/>
+    <h3>OpenGL Controls</h3>
+    <a href="#opengl_scopeplot">opengl.ScopePlot</a><br/>
     <h3>Arbitrary QWidgets</h3>
     <a href="#qwidgets">QWidgets</a><br/>
     <h3>License</h3>
@@ -88,7 +75,7 @@ Pythics is distributed in the hope that it will be useful, but WITHOUT ANY WARRA
     
     <a id="introduction"/>
     <h2>Introduction</h2>
-    <object classid="TextBox" height="300" id="introduction" width="100%">
+    <object classid="TextBox" height="500" id="introduction" width="100%">
       <param name="multiline" value="True"/>
       <param name="read_only" value="True"/>
       <param name="font" value="Courier"/>
@@ -114,6 +101,114 @@ Pythics is distributed in the hope that it will be useful, but WITHOUT ANY WARRA
     
     <h3>Help</h3>
     <object classid="TextBox" height="300" id="element_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    
+    <a id="main"/>
+    <h2>Main</h2>
+
+    <object classid="Main" id="main" width="100%">
+      <param name="python_filename" value="'help'"/>
+      <param name="parameters_filename" value="help_defaults.txt"/>
+      <param name="actions" value="{'initialized': 'help.initialize', 'terminated': 'help.terminate'}"/>
+    </object>
+
+    <h4>File Dialog Boxes</h4>
+    <object classid="Button" width="150">
+      <param name="actions" value="{'clicked': 'help.test_main_file_dialog_1'}"/>
+      <param name="label" value="Open File"/>
+    </object>
+    
+    <object classid="Button" width="150">
+      <param name="actions" value="{'clicked': 'help.test_main_file_dialog_2'}"/>
+      <param name="label" value="Save File"/>
+    </object>
+    
+    <object classid="Button" width="150">
+      <param name="actions" value="{'clicked': 'help.test_main_file_dialog_3'}"/>
+      <param name="label" value="Select Directory"/>
+    </object>
+
+    <object classid="TextBox" id="main_file_dialog_result" width="100%"/>
+    
+    <h4>Input Dialog Boxes</h4>
+
+    <object classid="Button" width="150">
+      <param name="actions" value="{'clicked': 'help.test_main_input_dialog_1'}"/>
+      <param name="label" value="Get int"/>
+    </object>
+    
+    <object classid="Button" width="150">
+      <param name="actions" value="{'clicked': 'help.test_main_input_dialog_2'}"/>
+      <param name="label" value="Get float"/>
+    </object>
+    
+    <object classid="Button" width="150">
+      <param name="actions" value="{'clicked': 'help.test_main_input_dialog_3'}"/>
+      <param name="label" value="Get list"/>
+    </object>
+    
+    <object classid="Button" width="150">
+      <param name="actions" value="{'clicked': 'help.test_main_input_dialog_4'}"/>
+      <param name="label" value="Get str"/>
+    </object>
+    
+    <object classid="TextBox" id="main_input_dialog_result_1" width="100%"/>
+
+    <h4>Message Dialog Boxes</h4>
+
+    <object classid="Button" width="150">
+      <param name="actions" value="{'clicked': 'help.test_main_message_dialog_1'}"/>
+      <param name="label" value="Message Box 1"/>
+    </object>
+    
+    <object classid="Button" width="150">
+      <param name="actions" value="{'clicked': 'help.test_main_message_dialog_2'}"/>
+      <param name="label" value="Message Box 2"/>
+    </object>
+
+    <object classid="Button" width="150">
+      <param name="actions" value="{'clicked': 'help.test_main_message_dialog_3'}"/>
+      <param name="label" value="Message Box 3"/>
+    </object>
+
+    <object classid="Button" width="150">
+      <param name="actions" value="{'clicked': 'help.test_main_message_dialog_4'}"/>
+      <param name="label" value="Message Box 4"/>
+    </object>
+
+    <object classid="TextBox" id="main_message_dialog_result_1" width="100%"/>
+
+    <h4>Parameter Loading and Saving</h4>
+
+    <object classid="FilePicker" id="main_parameter_file_picker_1" width="100%">
+      <param name="label" value="Save Parameter File"/>
+      <param name="actions" value="{'textChanged': 'help.test_main_parameter_save'}"/>
+      <param name="save" value="True"/>
+    </object>
+
+    <br/>
+
+    <object classid="FilePicker" id="main_parameter_file_picker_2" width="100%">
+      <param name="label" value="Load Parameter File"/>
+      <param name="actions" value="{'textChanged': 'help.test_main_parameter_load'}"/>
+      <param name="save" value="True"/>
+      <param name="dialog_type" value="open_file"/>
+    </object>
+
+    <br/>
+
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="Main_help" width="100%">
       <param name="multiline" value="True"/>
       <param name="read_only" value="True"/>
       <param name="font" value="Courier"/>
@@ -269,53 +364,67 @@ Pythics is distributed in the hope that it will be useful, but WITHOUT ANY WARRA
     
     <a id="event_button"/>
     <h2>EventButton</h2>
+
+    <h4>As an Interruptable Timer</h4>
+
     <object classid="Button" id="event_button_1_start" width="200">
       <param name="actions" value="{'clicked': 'help.test_event_button_1'}"/>
       <param name="label" value="Start"/>
     </object>
+
     <object classid="EventButton" id="event_button_1" width="200">
       <param name="label" value="Stop"/>
     </object>
     
     <p>result: </p>
-    <object classid="TextBox" id="event_button_result" width="100"/>
+    <object classid="TextBox" id="event_button_result_1" width="200"/>
     
-    <h3>Help</h3>
-    <object classid="TextBox" height="300" id="EventButton_help" width="100%">
-      <param name="multiline" value="True"/>
+    <h4>As a Computationally Light Stop Button</h4>
+
+    <object classid="Button" id="event_button_2_start" width="200">
+      <param name="actions" value="{'clicked': 'help.test_event_button_2'}"/>
+      <param name="label" value="Start"/>
+    </object>
+
+    <object classid="EventButton" id="event_button_2" width="200">
+      <param name="label" value="Stop"/>
+    </object>
+    
+    <p>result: </p>
+    <object classid="NumBox" id="event_button_result_2" width="200">
       <param name="read_only" value="True"/>
-      <param name="font" value="Courier"/>
+    </object>
+
+    <h4>As a Computationally Light Start/Stop Button</h4>
+
+    <object classid="EventButton" id="event_button_3" width="200">
+      <param name="toggle" value="True"/>
+      <param name="actions" value="{'run': 'help.test_event_button_3'}"/>
+      <param name="label" value="Start/Stop"/>
       <param name="save" value="False"/>
     </object>
     
-    <br/>
-    
-    <a href="#index">Back to Index</a>
-    
-    <hr/>
-    
-    <a id="file_dialog"/>
-    <h2>FileDialog</h2>
-    <object classid="FileDialog" id="file_dialog_1" width="100%"/>
-    
-    <br/>
-    
-    <object classid="TextBox" id="file_dialog_result" width="100%"/>
-    
-    <br/>
-    
-    <object classid="Button" width="200">
-      <param name="actions" value="{'clicked': 'help.test_file_dialog_1'}"/>
-      <param name="label" value="Open Dialog"/>
+    <p>result: </p>
+    <object classid="NumBox" id="event_button_result_3" width="200">
+      <param name="read_only" value="True"/>
+    </object>
+
+    <h4>As a Computationally Light Start/Stop Button with an Interruptable Timer</h4>
+
+    <object classid="EventButton" id="event_button_4" width="200">
+      <param name="toggle" value="True"/>
+      <param name="actions" value="{'run': 'help.test_event_button_4'}"/>
+      <param name="label" value="Start/Stop"/>
+      <param name="save" value="False"/>
     </object>
     
-    <object classid="Button" width="200">
-      <param name="actions" value="{'clicked': 'help.test_file_dialog_2'}"/>
-      <param name="label" value="Save Dialog"/>
+    <p>result: </p>
+    <object classid="NumBox" id="event_button_result_4" width="200">
+      <param name="read_only" value="True"/>
     </object>
-    
+
     <h3>Help</h3>
-    <object classid="TextBox" height="300" id="FileDialog_help" width="100%">
+    <object classid="TextBox" height="300" id="EventButton_help" width="100%">
       <param name="multiline" value="True"/>
       <param name="read_only" value="True"/>
       <param name="font" value="Courier"/>
@@ -454,7 +563,7 @@ Pythics is distributed in the hope that it will be useful, but WITHOUT ANY WARRA
     <object classid="FilePicker" id="image_image_filename" width="100%">
       <param name="label" value="Image file"/>
       <param name="save" value="True"/>
-      <param name="type" value="'open'"/>
+      <param name="dialog_type" value="open_file"/>
     </object>
     
     <br/>
@@ -482,7 +591,7 @@ Pythics is distributed in the hope that it will be useful, but WITHOUT ANY WARRA
     <object classid="FilePicker" id="image_with_shared_image_filename" width="100%">
       <param name="label" value="Image file"/>
       <param name="save" value="True"/>
-      <param name="type" value="open"/>
+      <param name="dialog_type" value="open_file"/>
     </object>
     
     <br/>
@@ -554,53 +663,6 @@ Pythics is distributed in the hope that it will be useful, but WITHOUT ANY WARRA
     
     <hr/>
     
-    <a id="input_dialog"/>
-    <h2>InputDialog</h2>
-    <object classid="InputDialog" id="input_dialog_1" width="100%">
-      <param name="title" value="input_dialog_1"/>
-      <param name="message" value="Enter a value:"/>
-      <param name="input_type" value="str"/>
-    </object>
-    
-    <br/>
-    
-    <object classid="Button" width="20%">
-      <param name="actions" value="{'clicked': 'help.test_input_dialog_1_1'}"/>
-      <param name="label" value="Get int"/>
-    </object>
-    
-    <object classid="Button" width="20%">
-      <param name="actions" value="{'clicked': 'help.test_input_dialog_1_2'}"/>
-      <param name="label" value="Get float"/>
-    </object>
-    
-    <object classid="Button" width="20%">
-      <param name="actions" value="{'clicked': 'help.test_input_dialog_1_3'}"/>
-      <param name="label" value="Get list"/>
-    </object>
-    
-    <object classid="Button" width="20%">
-      <param name="actions" value="{'clicked': 'help.test_input_dialog_1_4'}"/>
-      <param name="label" value="Get str"/>
-    </object>
-    
-    <p>result: </p>
-    <object classid="TextBox" id="input_dialog_result_1" width="100"/>
-    
-    <h3>Help</h3>
-    <object classid="TextBox" height="300" id="InputDialog_help" width="100%">
-      <param name="multiline" value="True"/>
-      <param name="read_only" value="True"/>
-      <param name="font" value="Courier"/>
-      <param name="save" value="False"/>
-    </object>
-    
-    <br/>
-    
-    <a href="#index">Back to Index</a>
-    
-    <hr/>
-    
     <a id="knob"/>
     <h2>Knob</h2>
     <object classid="Knob" id="knob_1" height="100" width="100">
@@ -631,40 +693,6 @@ Pythics is distributed in the hope that it will be useful, but WITHOUT ANY WARRA
     
     <hr/>
     
-    <a id="message_dialog"/>
-    <h2>MessageDialog</h2>
-    <object classid="MessageDialog" id="message_dialog_1" width="100%">
-      <param name="title" value="message_dialog_1"/>
-      <param name="message" value="Click a button!"/>
-      <param name="ok_button" value="True"/>
-      <param name="cancel_button" value="True"/>
-      <param name="severity" value="critical"/>
-    </object>
-    
-    <br/>
-    
-    <object classid="Button" width="25%">
-      <param name="actions" value="{'clicked': 'help.test_message_dialog_1'}"/>
-      <param name="label" value="Open Message Box"/>
-    </object>
-    
-    <p>result: </p>
-    <object classid="TextBox" id="message_dialog_result_1" width="100"/>
-    
-    <h3>Help</h3>
-    <object classid="TextBox" height="300" id="MessageDialog_help" width="100%">
-      <param name="multiline" value="True"/>
-      <param name="read_only" value="True"/>
-      <param name="font" value="Courier"/>
-      <param name="save" value="False"/>
-    </object>
-    
-    <br/>
-    
-    <a href="#index">Back to Index</a>
-    
-    <hr/>
-    
     <a id="meter"/>
     <h2>Meter</h2>
     <object classid="Button" width="25%">
@@ -679,6 +707,36 @@ Pythics is distributed in the hope that it will be useful, but WITHOUT ANY WARRA
     
     <h3>Help</h3>
     <object classid="TextBox" height="300" id="Meter_help" width="100%">
+      <param name="multiline" value="True"/>
+      <param name="read_only" value="True"/>
+      <param name="font" value="Courier"/>
+      <param name="save" value="False"/>
+    </object>
+    
+    <br/>
+    
+    <a href="#index">Back to Index</a>
+    
+    <hr/>
+    
+    <a id="metric_num_box"/>
+    <h2>MetricNumBox</h2>
+
+    <h4>Numeric control with units and metric prefixes</h4>
+    <object classid="MetricNumBox" id="metric_num_box_1" width="200">
+      <param name="actions" value="{'valueChanged': 'help.test_metric_num_box_1'}"/>
+      <param name="format_str" value="%.8g"/>
+      <param name="increment" value="0.1"/>
+      <param name="base_unit" value="V"/>
+      <param name="minimum" value="-15000.0"/>
+      <param name="maximum" value="20000.0"/>
+    </object>
+    
+    <p>result: </p>
+    <object classid="TextBox" id="metric_num_box_result_1" width="100"/>
+        
+    <h3>Help</h3>
+    <object classid="TextBox" height="300" id="MetricNumBox_help" width="100%">
       <param name="multiline" value="True"/>
       <param name="read_only" value="True"/>
       <param name="font" value="Courier"/>
@@ -751,26 +809,6 @@ Pythics is distributed in the hope that it will be useful, but WITHOUT ANY WARRA
     
     <hr/>
     
-    <a id="parameter_loader"/>
-    <h2>ParameterLoader</h2>
-    <object classid="ParameterLoader" width="100%">
-      <param name="filename" value="help_defaults.txt"/>
-    </object>
-    
-    <h3>Help</h3>
-    <object classid="TextBox" height="300" id="ParameterLoader_help" width="100%">
-      <param name="multiline" value="True"/>
-      <param name="read_only" value="True"/>
-      <param name="font" value="Courier"/>
-      <param name="save" value="False"/>
-    </object>
-    
-    <br/>
-    
-    <a href="#index">Back to Index</a>
-    
-    <hr/>
-    
     <a id="radio_button_box"/>
     <h2>RadioButtonBox</h2>
     <object classid="RadioButtonBox" id="radio_button_box_1">
@@ -812,27 +850,6 @@ Pythics is distributed in the hope that it will be useful, but WITHOUT ANY WARRA
     
     <h3>Help</h3>
     <object classid="TextBox" height="300" id="RunButton_help" width="100%">
-      <param name="multiline" value="True"/>
-      <param name="read_only" value="True"/>
-      <param name="font" value="Courier"/>
-      <param name="save" value="False"/>
-    </object>
-    
-    <br/>
-    
-    <a href="#index">Back to Index</a>
-    
-    <hr/>
-    
-    <a id="script_loader"/>
-    <h2>ScriptLoader</h2>
-    <object classid="ScriptLoader" width="100%">
-      <param name="filename" value="'help'"/>
-      <param name="actions" value="{'initialized': 'help.Initialize', 'terminated': 'help.Terminate'}"/>
-    </object>
-    
-    <h3>Help</h3>
-    <object classid="TextBox" height="300" id="ScriptLoader_help" width="100%">
       <param name="multiline" value="True"/>
       <param name="read_only" value="True"/>
       <param name="font" value="Courier"/>
@@ -952,7 +969,7 @@ Pythics is distributed in the hope that it will be useful, but WITHOUT ANY WARRA
     <a id="text_io_box"/>
     <h2>TextIOBox</h2>
     <object classid="TextIOBox" height="100" id="text_io_box_1" width="100%">
-      <param name="reverse" value="True"/>
+      <param name="logging" value="True"/>
     </object>
     
     <br/>
@@ -1034,10 +1051,6 @@ Pythics is distributed in the hope that it will be useful, but WITHOUT ANY WARRA
     <object classid="Button" width="100%">
       <param name="actions" value="{'clicked': 'help.test_mpl_canvas_1'}"/>
       <param name="label" value="Plot"/>
-    </object>
-    
-    <object classid="Import" id="matplotlib" width="100%">
-      <param name="module" value="matplotlib"/>
     </object>
     
     <h3>Help</h3>
@@ -1147,273 +1160,29 @@ Pythics is distributed in the hope that it will be useful, but WITHOUT ANY WARRA
     <a href="#index">Back to Index</a>
     
     <hr/>
-    
-    <a id="qwt_chart"/>
-    <h2>qwt.Chart (use mpl.Chart2D for new code)</h2>
-    <object classid="qwt.Chart" height="600" id="qwt_chart_1" width="100%">
-      <param name="plots" value="2"/>
-      <param name="history" value="5000"/>
+    <a id="opengl_scopeplot"/>
+    <h2>opengl.ScopePlot</h2>
+    <object classid="opengl.ScopePlot" id="opengl_scope_plot_1" height="300" width="50%">
+        <param name="antialias" value="True"/>
+        <param name="use_opengl" value="False"/>
+        <param name="grid_color" value="(200,200,200,255)"/>
+        <param name="grid_line_width" value="1"/>
     </object>
     
     <br/>
     
-    <object classid="Button" width="25%">
-      <param name="actions" value="{'clicked': 'help.test_qwt_chart_1_1'}"/>
-      <param name="label" value="Plot 1"/>
-    </object>
-    
-    <object classid="Button" width="25%">
-      <param name="actions" value="{'clicked': 'help.test_qwt_chart_1_2'}"/>
-      <param name="label" value="Change Colors"/>
-    </object>
-    
-    <object classid="Button" width="25%">
-      <param name="actions" value="{'clicked': 'help.test_qwt_chart_1_3'}"/>
-      <param name="label" value="Append Data"/>
-    </object>
-    
-    <object classid="Button" width="25%">
-      <param name="actions" value="{'clicked': 'help.test_qwt_chart_1_clear'}"/>
-      <param name="label" value="Clear Plot"/>
-    </object>
-    
-    <h3>Help</h3>
-    <object classid="TextBox" height="300" id="qwtChart_help" width="100%">
-      <param name="multiline" value="True"/>
-      <param name="read_only" value="True"/>
-      <param name="font" value="Courier"/>
-      <param name="save" value="False"/>
-    </object>
-    
-    <br/>
-    
-    <a href="#index">Back to Index</a>
-    
-    <hr/>
-    
-    <a id="qwt_gauge"/>
-    <h2>qwt.Gauge</h2>
-    <object classid="qwt.Gauge" height="50" id="qwt_gauge_1" width="50%">
-      <param name="scale_position" value="bottom"/>
-    </object>
-    
-    <object classid="qwt.Gauge" height="200" id="qwt_gauge_2">
-      <param name="max" value="10"/>
-      <param name="step" value="1"/>
-      <param name="alarm" value="8"/>
-      <param name="orientation" value="vertical"/>
-      <param name="scale_position" value="left"/>
-    </object>
-    
-    <br/>
-    
-    <object classid="Button" width="200">
-      <param name="actions" value="{'clicked': 'help.test_qwt_gauge_1'}"/>
-      <param name="label" value="Pulse Gauge 1"/>
-    </object>
-    
-    <object classid="Button" width="200">
-      <param name="actions" value="{'clicked': 'help.test_qwt_gauge_2'}"/>
-      <param name="label" value="Randomize Gauge 2"/>
-    </object>
-    
-    <h3>Help</h3>
-    <object classid="TextBox" height="300" id="qwtGauge_help" width="100%">
-      <param name="multiline" value="True"/>
-      <param name="read_only" value="True"/>
-      <param name="font" value="Courier"/>
-      <param name="save" value="False"/>
-    </object>
-    
-    <br/>
-    
-    <a href="#index">Back to Index</a>
-    
-    <hr/>
-    
-    <a id="qwt_knob"/>
-    <h2>qwt.Knob</h2>
-    <object classid="qwt.Knob" height="200" id="qwt_knob_1" width="200">
-      <param name="actions" value="{'valueChanged': 'help.test_qwt_knobs'}"/>
-      <param name="minimum" value="0.0"/>
-      <param name="maximum" value="100.0"/>
-      <param name="steps" value="1.0"/>
-      <param name="scale_step" value="5.0"/>
-      <param name="border_width" value="2"/>
-      <param name="knob_width" value="80"/>
-    </object>
-    
-    <object classid="qwt.Knob" height="200" id="qwt_knob_2" width="200">
-      <param name="actions" value="{'valueChanged': 'help.test_qwt_knobs'}"/>
-      <param name="tracking" value="True"/>
-      <param name="minimum" value="0.0"/>
-      <param name="maximum" value="100.0"/>
-      <param name="step" value="5.0"/>
-      <param name="scale_step" value="10.0"/>
-      <param name="border_width" value="2"/>
-      <param name="knob_width" value="80"/>
-    </object>
-    
-    <p>result: </p>
-    <object classid="TextBox" id="qwt_knob_result" width="100"/>
-    
-    <h3>Help</h3>
-    <object classid="TextBox" height="300" id="qwtKnob_help" width="100%">
-      <param name="multiline" value="True"/>
-      <param name="read_only" value="True"/>
-      <param name="font" value="Courier"/>
-      <param name="save" value="False"/>
-    </object>
-    
-    <br/>
-    
-    <a href="#index">Back to Index</a>
-    
-    <hr/>
-    
-    <a id="qwt_plot"/>
-    <h2>qwt.Plot (use mpl.Plot2D for new code)</h2>
-    <object classid="qwt.Plot" height="400" id="qwt_plot_1" width="100%"/>
-    
-    <br/>
-    
-    <object classid="Button" width="25%">
-      <param name="actions" value="{'clicked': 'help.test_qwt_plot_1_1'}"/>
-      <param name="label" value="Plot 1"/>
-    </object>
-    
-    <object classid="Button" width="25%">
-      <param name="actions" value="{'clicked': 'help.test_qwt_plot_1_2'}"/>
-      <param name="label" value="Change Colors"/>
-    </object>
-    
-    <object classid="Button" width="25%">
-      <param name="actions" value="{'clicked': 'help.test_qwt_plot_1_3'}"/>
-      <param name="label" value="Change Data"/>
-    </object>
-    
-    <object classid="Button" width="25%">
-      <param name="actions" value="{'clicked': 'help.test_qwt_plot_1_clear'}"/>
-      <param name="label" value="Clear Plot"/>
-    </object>
-    
-    <h3>Help</h3>
-    <object classid="TextBox" height="300" id="qwtPlot_help" width="100%">
-      <param name="multiline" value="True"/>
-      <param name="read_only" value="True"/>
-      <param name="font" value="Courier"/>
-      <param name="save" value="False"/>
-    </object>
-    
-    <br/>
-    
-    <a href="#index">Back to Index</a>
-    
-    <hr/>
-    
-    <a id="qwt_point_line_plot"/>
-    <h2>qwt.PointLinePlot (use mpl.Plot2D for new code)</h2>
-    <object classid="qwt.PointLinePlot" height="400" id="qwt_point_plot_1" width="100%"/>
-    
-    <br/>
-    
-    <object classid="ChoiceBox" height="100" id="point_plot_symbol" width="150">
-      <param name="choices" value="['circle', 'square', 'diamond', 'triangle',          'triangle_down', 'triangle_up', 'triangle_left', 'triangle_right, cross',          'cross_x', 'line_horizontal', 'line_vertical', 'star', 'star_2', 'hexagon']"/><param name="style" value="single"/>
-      <param name="save" value="True"/>
-    </object>
-    
-    <object classid="ChoiceBox" height="100" id="point_plot_line_color" width="150">
-      <param name="choices" value="['black', 'blue', 'green', 'orange', 'red', 'violet', 'yellow']"/>
-      <param name="style" value="single"/>
-      <param name="save" value="True"/>
-    </object>
-    
-    <object classid="ChoiceBox" height="100" id="point_plot_fill_color" width="150">
-      <param name="choices" value="['black', 'blue', 'green', 'orange', 'red', 'violet', 'yellow']"/>
-      <param name="style" value="single"/>
-      <param name="save" value="True"/>
-    </object>
-    
-    <object classid="NumBox" id="point_plot_line_width" width="100">
-      <param name="format_str" value="%d"/>
-      <param name="digits" value="0"/>
-    </object>
-    
-    <object classid="NumBox" id="point_plot_size" width="100">
-      <param name="format_str" value="%d"/>
-      <param name="digits" value="0"/>
-    </object>
-    
-    <br/>
-    
-    <object classid="Button" width="33.33%">
-      <param name="actions" value="{'clicked': 'help.test_point_line_plot_setup'}"/>
+    <object classid="Button" width="50%">
+      <param name="actions" value="{'clicked': 'help.test_opengl_scope_plot_1_setup'}"/>
       <param name="label" value="Setup"/>
     </object>
-    
-    <object classid="Button" width="33.33%">
-      <param name="actions" value="{'clicked': 'help.test_qwt_point_line_plot_1_point'}"/>
-      <param name="label" value="Draw Point"/>
-    </object>
-    
-    <object classid="Button" width="33.33%">
-      <param name="actions" value="{'clicked': 'help.test_qwt_point_line_plot_1_clear'}"/>
-      <param name="label" value="Clear"/>
-    </object>
-    
-    <br/>
-    
-    <object classid="Button" width="33.33%">
-      <param name="actions" value="{'clicked': 'help.test_qwt_point_line_plot_1_line'}"/>
-      <param name="label" value="Draw Line"/>
-    </object>
-    
-    <object classid="Button" width="33.33%">
-      <param name="actions" value="{'clicked': 'help.test_qwt_point_line_plot_1_start_line'}"/>
-      <param name="label" value="Start Line"/>
-    </object>
-    
-    <object classid="Button" width="33.33%">
-      <param name="actions" value="{'clicked': 'help.test_qwt_point_line_plot_1_line_to'}"/>
-      <param name="label" value="Draw Line To"/>
-    </object>
-    
-    <br/>
-    
-    <object classid="Button" width="33.33%">
-      <param name="actions" value="{'clicked': 'help.test_qwt_point_line_plot_1_draw_point_and_points'}"/>
-      <param name="label" value="Draw Point and Points"/>
-    </object>
-    
-    <object classid="Button" width="33.33%">
-      <param name="actions" value="{'clicked': 'help.test_qwt_point_line_plot_1_change_point_data'}"/>
-      <param name="label" value="Change Point Data"/>
-    </object>
-    
-    <object classid="Button" width="33.33%">
-      <param name="actions" value="{'clicked': 'help.test_qwt_point_line_plot_1_change_point_properties'}"/>
-      <param name="label" value="Change Point Properties"/>
-    </object>
-    
-    <br/>
-    
-    <object classid="Button" width="33.33%">
-      <param name="actions" value="{'clicked': 'help.test_qwt_point_line_plot_1_draw_line_and_lines'}"/>
-      <param name="label" value="Draw Line and Lines"/>
-    </object>
-    
-    <object classid="Button" width="33.33%">
-      <param name="actions" value="{'clicked': 'help.test_qwt_point_line_plot_1_change_line_data'}"/>
-      <param name="label" value="Change Line Data"/>
-    </object>
-    
-    <object classid="Button" width="33.33%">
-      <param name="actions" value="{'clicked': 'help.test_qwt_point_line_plot_1_change_line_properties'}"/>
-      <param name="label" value="Change Line Properties"/>
+
+    <object classid="Button" width="50%">
+      <param name="actions" value="{'clicked': 'help.test_opengl_scope_plot_1_plot'}"/>
+      <param name="label" value="Plot"/>
     </object>
     
     <h3>Help</h3>
-    <object classid="TextBox" height="300" id="qwtPointLinePlot_help" width="100%">
+    <object classid="TextBox" height="300" id="openglScopePlot_help" width="100%">
       <param name="multiline" value="True"/>
       <param name="read_only" value="True"/>
       <param name="font" value="Courier"/>
@@ -1425,58 +1194,17 @@ Pythics is distributed in the hope that it will be useful, but WITHOUT ANY WARRA
     <a href="#index">Back to Index</a>
     
     <hr/>
-    
-    <a id="qwt_slider"/>
-    <h2>qwt.Slider</h2>
-    <object classid="qwt.Slider" id="qwt_slider_1" width="50%">
-      <param name="actions" value="{'valueChanged': 'help.test_qwt_slider_1'}"/>
-      <param name="minimum" value="0"/>
-      <param name="maximum" value="1000"/>
-      <param name="step" value="10"/>
-      <param name="scale_step" value="100"/>
-      <param name="tracking" value="True"/>
-      <param name="scale_position" value="bottom"/>
-    </object>
-    
-    <object classid="qwt.Slider" height="200" id="slider_2">
-      <param name="actions" value="{'valueChanged': 'help.test_slider_2'}"/>
-      <param name="tracking" value="False"/>
-      <param name="minimum" value="0"/>
-      <param name="maximum" value="1000"/>
-      <param name="step" value="100"/>
-      <param name="scale_step" value="100"/>
-      <param name="orientation" value="vertical"/>
-      <param name="style" value="slot"/>
-      <param name="scale_position" value="right"/>
-    </object>
-    
-    <p>result: </p>
-    <object classid="TextBox" id="slider_result" width="100"/>
-    
-    <h3>Help</h3>
-    <object classid="TextBox" height="300" id="qwtSlider_help" width="100%">
-      <param name="multiline" value="True"/>
-      <param name="read_only" value="True"/>
-      <param name="font" value="Courier"/>
-      <param name="save" value="False"/>
-    </object>
-    
-    <br/>
-    
-    <a href="#index">Back to Index</a>
-    
-    <hr/>
-    
+
     <a id="qwidgets"/>
     <h2>QWidgets - Calendar and LCDNumber</h2>
     <h3>One of each below will fail to load, depending on whether you have PyQt or PySide!</h3>
-    <object classid="PyQt4.QtGui.QCalendarWidget" height="300" id="qwidget_2" width="500"/>
-    <object classid="PySide.QtGui.QCalendarWidget" height="300" id="qwidget_2" width="500"/>
+    <object classid="PyQt5.QtWidgets.QCalendarWidget" height="300" id="qwidget_2" width="500"/>
+    <object classid="PySide2.QtWidgets.QCalendarWidget" height="300" id="qwidget_2" width="500"/>
    
     <br/>
     
-    <object classid="PyQt4.QtGui.QLCDNumber" height="80" id="qwidget_1" width="500"/>
-    <object classid="PySide.QtGui.QLCDNumber" height="80" id="qwidget_1" width="500"/>
+    <object classid="PyQt5.QtWidgets.QLCDNumber" height="80" id="qwidget_1" width="500"/>
+    <object classid="PySide2.QtWidgets.QLCDNumber" height="80" id="qwidget_1" width="500"/>
     
     <br/>
     
@@ -1485,15 +1213,11 @@ Pythics is distributed in the hope that it will be useful, but WITHOUT ANY WARRA
       <param name="label" value="Setup"/>
     </object>
     
+<!-- pyqtgraph example is currently broken!!!
     <hr/>
     
     <h2>QWidgets - pyqtgraph (appears as red boxes if pyqtgraph is not installed)</h2>
-    <object classid="Import" id="pyqtgraph">
-      <param name="module" value="pyqtgraph"/>
-    </object>
-    
     <object classid="pyqtgraph.PlotWidget" height="400" id="pyqtgraph_plot_widget" width="100%"/>
-    
     <object classid="pyqtgraph.GraphicsLayoutWidget" height="400" id="pyqtgraph_graphics_layout_widget" width="100%"/>
     
     <br/>
@@ -1502,6 +1226,7 @@ Pythics is distributed in the hope that it will be useful, but WITHOUT ANY WARRA
       <param name="actions" value="{'clicked': 'help.test_pyqtgraph'}"/>
       <param name="label" value="Run"/>
     </object>
+-->
     
     <h3>Help</h3>
     <object classid="TextBox" height="300" id="QWidgets_help" width="100%">
@@ -1514,7 +1239,7 @@ Pythics is distributed in the hope that it will be useful, but WITHOUT ANY WARRA
     <br/>
     
     <a href="#index">Back to Index</a>
-    
+
     <hr/>
     
     <a id="copying"/>

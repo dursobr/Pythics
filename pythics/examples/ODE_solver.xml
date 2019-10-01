@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?><!--  
-Copyright 2012 - 2014 Brian R. D'Urso
+Copyright 2012 - 2019 Brian R. D'Urso
 
 This file is part of Python Instrument Control System, also known as Pythics. 
 
@@ -28,7 +28,7 @@ Pythics is distributed in the hope that it will be useful, but WITHOUT ANY WARRA
     <h1>ODE Solver</h1>
     
     <object classid="mpl.Plot2D" height="400" id="plot_1" width="50%"/>
-    
+    0.000000
     <object classid="mpl.Plot2D" height="400" id="plot_2" width="50%"/>
     
     <hr/>
@@ -73,15 +73,12 @@ Pythics is distributed in the hope that it will be useful, but WITHOUT ANY WARRA
     
     <object classid="Shell" height="200" id="shell" width="100%"/>
     
-    <object classid="ScriptLoader" width="0%">
-      <param name="filename" value="ODE_solver"/>
-      <param name="actions" value="{'initialized': 'ODE_solver.initialize'}"/>
-    </object>
-    
     <br/>
     
-    <object classid="ParameterLoader" width="0%">
-      <param name="filename" value="ODE_solver_defaults.txt"/>
+    <object classid="Main" id="main" width="0%">
+      <param name="python_filename" value="ODE_solver"/>
+      <param name="parameters_filename" value="ODE_solver_defaults.txt"/>
+      <param name="actions" value="{'initialized': 'ODE_solver.initialize'}"/>
     </object>
     
   </body>

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?><!--  
-Copyright 2012 - 2014 Brian R. D'Urso
+Copyright 2012 - 2019 Brian R. D'Urso
 
 This file is part of Python Instrument Control System, also known as Pythics. 
 
@@ -32,65 +32,62 @@ Pythics is distributed in the hope that it will be useful, but WITHOUT ANY WARRA
     <hr/>
     
     <table width="100%">
-      <tr><td width="25%">
-          <object classid="Button" width="100%">
-            <param name="label" value="Run"/>
-            <param name="actions" value="{'clicked': 'ODE_N_particles.run'}"/>
-          </object></td><td width="25%">
-          <object classid="Button" id="stop" width="100%">
-            <param name="toggle" value="True"/>
-            <param name="label" value="Stop"/>
+      <tr><td colspan='2'>
+          <object classid="RunButton" id="start_stop" width="100%" height="50">
+            <param name="label" value="Start/Stop"/>
+            <param name="actions" value="{'run': 'ODE_N_particles.run'}"/>
           </object>
-        </td><td width="25%">
-          <object classid="Button" width="100%">
+        </td><td>
+          <object classid="Button" width="100%" height="50">
             <param name="label" value="Clear"/>
             <param name="actions" value="{'clicked': 'ODE_N_particles.clear'}"/>
-          </object></td></tr><tr><td>
+          </object></td>
+        </tr><tr><td>
           <h6>dt</h6>
           <object classid="NumBox" id="prob_dt" width="100%">
             <param name="digits" value="6"/>
             <param name="minimum" value="0"/>
           </object>
         </td><td>
-          <h6>dt per update</h6>
-          <object classid="NumBox" id="dt_per_update" width="100%">
-            <param name="digits" value="2"/>
-            <param name="minimum" value="0"/>
+          <h6>Steps Per Update</h6>
+          <object classid="NumBox" id="steps_per_update" width="100%">
+            <param name="digits" value="0"/>
+            <param name="minimum" value="1"/>
           </object>
         </td><td>
-          <h6>algorithm</h6>
+          <h6>Algorithm</h6>
           <object classid="ChoiceButton" id="algorithm" width="100%">
             <param name="choices" value="['Euler', 'Euler_symplectic', 'velocity_Verlet', 'RK2', 'RK4']"/>
           </object>
         </td></tr><tr><td>
-          <h6>box m</h6>
+          <h6>Box m</h6>
           <object classid="NumBox" id="prob_m" width="100%">
             <param name="digits" value="0"/>
             <param name="minimum" value="0"/>
           </object>
         </td><td>
-          <h6>epsilon</h6>
+          <h6>Epsilon</h6>
           <object classid="NumBox" id="prob_epsilon" width="100%">
             <param name="digits" value="6"/>
           </object>
         </td><td>
-          <h6>zero interaction radius</h6>
+          <h6>Zero Interaction Radius</h6>
           <object classid="NumBox" id="prob_r_zero" width="100%">
             <param name="digits" value="6"/>
           </object>
-        </td></tr><tr><td>
-          <h6>N particles</h6>
+        </td></tr><tr><td width="25%">
+          <h6>N Particles</h6>
           <object classid="NumBox" id="prob_N_particles" width="100%">
             <param name="digits" value="0"/>
             <param name="minimum" value="1"/>
           </object>
-        </td><td>
-          <h6>max initial v</h6>
+        </td><td width="25%">
+          <h6>Max Initial v</h6>
           <object classid="NumBox" id="prob_v_max" width="100%">
             <param name="digits" value="6"/>
           </object>
-        </td><td>
-          <h6>gravitational acceleration</h6>
+        </td><td width="25%">
+          <h6>Gravitational Acceleration</h6>
           <object classid="NumBox" id="prob_g" width="100%">
             <param name="digits" value="6"/>
           </object>
@@ -98,21 +95,19 @@ Pythics is distributed in the hope that it will be useful, but WITHOUT ANY WARRA
     </table>
     <hr/>
     
-    <object classid="TextIOBox" height="100" id="messages" width="100%"/>
-    
+    <object classid="TextIOBox" height="100" id="messages" width="100%">
+       <param name='logging' value='True'/>
+       <param name='save' value='False'/>
+    </object>
+   
     <hr/>
     
     <object classid="Shell" height="200" id="shell" width="100%"/>
     
-    <object classid="ScriptLoader" width="0%">
-      <param name="filename" value="ODE_N_particles"/>
+    <object classid="Main" id="main" width="0%">
+      <param name="python_filename" value="ODE_N_particles"/>
+      <param name="parameters_filename" value="ODE_N_particles_defaults.txt"/>
       <param name="actions" value="{'initialized': 'ODE_N_particles.initialize'}"/>
-    </object>
-    
-    <br/>
-    
-    <object classid="ParameterLoader" width="0%">
-      <param name="filename" value="ODE_N_particles_defaults.txt"/>
     </object>
     
   </body>

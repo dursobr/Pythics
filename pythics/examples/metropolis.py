@@ -79,7 +79,7 @@ def metropolis_run(metropolis_L, metropolis_N, metropolis_N_thermalize, metropol
     messages.write('\n=== METROPOLIS =========================\n')
     # allocate data arrays   
     spins = np.zeros(L, dtype='int8')
-    ns = range(L)
+    ns = list(range(L))
     spins[:] = 2*np.random.randint(0, 2, L) - 1
     plot_1.set_data('S', np.column_stack([ns, spins]), rescale=True)
     # the calculation
@@ -110,7 +110,7 @@ def magnetization_run(magnetization_L, magnetization_N, magnetization_N_thermali
     messages.write('\n=== MAGNETIZATION =========================\n')
     # allocate data arrays   
     spins = np.zeros(L, dtype='int8')
-    ns = range(L)
+    ns = list(range(L))
     plot_1.set_data('S', np.column_stack([ns, spins]), rescale=True)
     for T in np.linspace(T_0, T_F, N_T):
         spins[:] = 2*np.random.randint(0, 2, L) - 1
@@ -143,7 +143,7 @@ def sa_run(sa_L, sa_T_0, sa_T_F, sa_N_T,
     # allocate data arrays   
     spins = np.zeros(L, dtype='int8')
     spins[:] = 2*np.random.randint(0, 2, L) - 1
-    ns = range(L)
+    ns = list(range(L))
     plot_1.set_data('S', np.column_stack([ns, spins]), rescale=True)
     for T in np.logspace(np.log10(T_0), np.log10(T_F), N_T):
         # the calculation

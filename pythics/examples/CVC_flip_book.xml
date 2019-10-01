@@ -1,0 +1,75 @@
+<!--                                                                        -->
+<!-- Copyright 2008 - 2019 Brian R. D'Urso                                  -->
+<!--                                                                        -->
+<!-- This file is part of Python Instrument Control System,                 -->
+<!-- also known as Pythics.                                                 -->
+<!--                                                                        -->
+<!-- Pythics is free software: you can redistribute it and/or modify        -->
+<!-- it under the terms of the GNU General Public License as published by   -->
+<!-- the Free Software Foundation, either version 3 of the License, or      -->
+<!-- (at your option) any later version.                                    -->
+<!--                                                                        -->
+<!-- Pythics is distributed in the hope that it will be useful,             -->
+<!-- but WITHOUT ANY WARRANTY; without even the implied warranty of         -->
+<!-- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          -->
+<!-- GNU General Public License for more details.                           -->
+<!--                                                                        -->
+<!-- You should have received a copy of the GNU General Public License      -->
+<!-- along with Pythics.  If not, see <http://www.gnu.org/licenses/>.       -->
+<!--                                                                        -->
+
+<html>
+<head><title>CVC Flip Book</title></head>
+<body>
+
+<object classid='TextBox' id='display' height='270' width='100%'>
+    <param name='align' value='center'/>
+    <param name='read_only' value='True'/>
+    <param name='font' value='Sans'/>
+    <param name='font_size' value='160'/>
+    <param name='font_weight' value='Bold'/>
+</object>
+<br/>
+
+<table width="100%">
+  <tr><td width="33%">
+        <object classid='Button' height='50' width='100%'>
+            <param name='label' value="u'\u2191'"/>
+            <param name='actions' value="{'clicked': 'CVC_flip_book.letter_1_previous'}"/>
+        </object>
+    </td><td width="33%">
+        <object classid='Button' height='50' width='100%'>
+            <param name='label' value="u'\u2191'"/>
+            <param name='actions' value="{'clicked': 'CVC_flip_book.letter_2_previous'}"/>
+        </object>
+    </td><td width="33%">
+        <object classid='Button' height='50' width='100%'>
+            <param name='label' value="u'\u2191'"/>
+            <param name='actions' value="{'clicked': 'CVC_flip_book.letter_3_previous'}"/>
+        </object>
+    </td></tr>
+  <tr><td width="33%">
+        <object classid='Button' height='50' width='100%'>
+            <param name='label' value="u'\u2193'"/>
+            <param name='actions' value="{'clicked': 'CVC_flip_book.letter_1_next'}"/>
+        </object>
+    </td><td width="33%">
+        <object classid='Button' height='50' width='100%'>
+            <param name='label' value="u'\u2193'"/>
+            <param name='actions' value="{'clicked': 'CVC_flip_book.letter_2_next'}"/>
+        </object>
+    </td><td width="33%">
+        <object classid='Button' height='50' width='100%'>
+            <param name='label' value="u'\u2193'"/>
+            <param name='actions' value="{'clicked': 'CVC_flip_book.letter_3_next'}"/>
+        </object>
+    </td></tr>
+</table>
+
+<object classid="Main" id="main" width="0%">
+  <param name="python_filename" value="CVC_flip_book"/>
+  <param name="actions" value="{'initialized': 'CVC_flip_book.initialize'}"/>
+</object>
+
+</body>
+</html>

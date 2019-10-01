@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?><!--  
-Copyright 2012 - 2014 Brian R. D'Urso
+Copyright 2012 - 2019 Brian R. D'Urso
 
 This file is part of Python Instrument Control System, also known as Pythics. 
 
@@ -61,7 +61,7 @@ Pythics is distributed in the hope that it will be useful, but WITHOUT ANY WARRA
     <object classid="FilePicker" id="file_picker" width="100%">
       <param name="label" value="Load file"/>
       <param name="save" value="True"/>
-      <param name="type" value="'open'"/>
+      <param name="dialog_type" value="open_file"/>
     </object> 
     
     <hr/>
@@ -91,17 +91,12 @@ Pythics is distributed in the hope that it will be useful, but WITHOUT ANY WARRA
     <object classid="Shell" height="200" id="shell" width="100%">
             </object>
     
-    <object classid="ScriptLoader" width="0%">
-      <param name="filename" value="fitting"/>
-      <param name="label" value=""/>
-      <param name="actions" value="{'initialized': 'fitting.initialize'}"/>
-    </object>
-    
     <br/>
-    
-    <object classid="ParameterLoader" width="0%">
-      <param name="filename" value="fitting_defaults.txt"/>
-      <param name="label" value=""/>
+
+    <object classid="Main" id="main" width="0%">
+      <param name="python_filename" value="fitting"/>
+      <param name="parameters_filename" value="fitting_defaults.txt"/>
+      <param name="actions" value="{'initialized': 'fitting.initialize'}"/>
     </object>
     
   </body>

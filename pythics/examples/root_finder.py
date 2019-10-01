@@ -7,11 +7,24 @@
 #
 # load libraries
 #
+import logging
 import math
 import numpy as np
 
 
+# setup the logger
+logger = logging.getLogger('log')
+#logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
+
+
 def initialize(shell, **kwargs):
+    # setup the logger
+    sh = logging.StreamHandler(kwargs['messages'])
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    sh.setFormatter(formatter)
+    logger.addHandler(sh)
+    # setup the python shell
     shell.interact(kwargs.copy())
     clear(**kwargs)
 
@@ -57,14 +70,14 @@ def run(function, algorithm, N, N_plot_steps, messages, plot, **kwargs):
     plot.set_data('f', np.column_stack([xs, ys]))
     # now find the root
     if a == 'bisection':
-        messages.write('Root finding by bisection...\n')
+        logger.info('root finding by bisection...')
         for i in range(N_steps):
             x_1, x_2 = bisection(f, x_1, x_2, plot, messages)
     elif a == 'secant':
-        messages.write('Root finding by secant method...\n')
+        logger.info('root finding by secant method...')
         for i in range(N_steps):
             x_1, x_2 = secant(f, x_1, x_2, plot, messages)
-    messages.write('Done.\n')
+    logger.info('Done.\n')
 
 
 def bisection(f, xm, xp, plot, messages):
@@ -74,7 +87,7 @@ def bisection(f, xm, xp, plot, messages):
         xp = x
     else:
         xm = x
-    messages.write('bisection in  [%g, %g], error = %g\n' % (xm, xp, y))
+    logger.info('bisection in  [%g, %g], error = %g' % (xm, xp, y))
     plot.append_data('search', (x, y))
     return xm, xp
 
@@ -83,7 +96,7 @@ def secant(f, x1, x2, plot, messages):
     # the following is inefficient, since we already new y2 
     y1 = f(x1)
     y2 = f(x2)
-    messages.write('secant: x = %g, error = %g\n' % (x2, y2))
+    logger.info('secant: x = %g, error = %g' % (x2, y2))
     plot.append_data('search', (x2, y2))
     x3 = x2 - y2*(x2-x1)/(y2-y1)
     x1 = x2

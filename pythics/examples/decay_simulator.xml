@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?><!--  
-Copyright 2012 - 2014 Brian R. D'Urso
+Copyright 2012 - 2019 Brian R. D'Urso
 
 This file is part of Python Instrument Control System, also known as Pythics. 
 
@@ -74,15 +74,10 @@ Pythics is distributed in the hope that it will be useful, but WITHOUT ANY WARRA
     
     <br/>
     
-    <object classid="ScriptLoader" width="0%">
-      <param name="filename" value="decay_simulator"/>
+    <object classid="Main" id="main" width="0%">
+      <param name="python_filename" value="decay_simulator"/>
+      <param name="parameters_filename" value="decay_simulator_defaults.txt"/>
       <param name="actions" value="{'initialized': 'decay_simulator.initialize'}"/>
-    </object>
-    
-    <br/>
-    
-    <object classid="ParameterLoader" width="0%">
-      <param name="filename" value="decay_simulator_defaults.txt"/>
     </object>
     
   </body>

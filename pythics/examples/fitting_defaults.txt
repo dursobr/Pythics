@@ -1,18 +1,28 @@
 (dp0
-S'function'
+Vmain
 p1
-S'p[0]*np.exp(-p[1]*x)'
+NsVfile_picker
 p2
-sS'fit_type'
+V/home/bdurso/Dropbox/MSU/pythics-all/pythics/pythics/examples/data_6_3a.csv
 p3
-S'nonlinear'
+sVplot
 p4
-sS'file_picker'
+NsVfit_type
 p5
-S'Z:/dursobr/documents_xp/pythics-all/pythics/examples/simulations/data_6_3a.csv'
+Vnonlinear
 p6
-sS'initial_guess'
+sVfunction
 p7
-S'[5000, .1]'
+Vp[0]*np.exp(-p[1]*x)
 p8
+sVinitial_guess
+p9
+V[5000.0, 0.1]
+p10
+sVshell
+p11
+NsVmessages
+p12
+V
+p13
 s.

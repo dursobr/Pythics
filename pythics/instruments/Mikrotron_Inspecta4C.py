@@ -35,7 +35,7 @@ mvfg_errmessage = inspecta_dll.mvfg_errmessage
 mvfg_grab = inspecta_dll.mvfg_grab
 mvfg_getbufptr = inspecta_dll.mvfg_getbufptr
 
-MVFG_OK = 0L
+MVFG_OK = 0
 
 #global parameters for GetParam and SetParam
 MVFGPAR_CAMMODE	= "CamMode"

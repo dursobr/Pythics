@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2008 - 2014 Brian R. D'Urso
+# Copyright 2008 - 2019 Brian R. D'Urso
 #
 # This file is part of Python Instrument Control System, also known as Pythics.
 #
@@ -27,6 +27,7 @@ import random, time
 
 try:
     import PIL.Image
+    import PIL.ImageQt
 except:
     logger = multiprocessing.get_logger()
     logger.warning("'Python Imaging Library (PIL)' is not available.")
@@ -54,18 +55,18 @@ private = Private()
 #
 # Extract and display help for an object
 #
-def help_dynamic(inspect_master, ob):
+def help_dynamic(inspect, ob):
     # start with the __doc__ from the original object
     cls = ob._get_class()
-    members = inspect_master.getmembers(cls)
-    text = inspect_master.getdoc(cls)
+    members = inspect.getmembers(cls)
+    text = inspect.getdoc(cls)
     text = ''.join([text, '\n\n', 'Methods and attributes:'])
     for k, v in members:
         if not k.startswith('_'):
-            doc = inspect_master.getdoc(v)
-            if inspect_master.ismethod(v):
-                argspec = inspect_master.getargspec(v)
-                k = ''.join(['*', k, '*', inspect_master.formatargspec(argspec[0], argspec[1], argspec[2], argspec[3])])
+            doc = inspect.getdoc(v)
+            if inspect.isfunction(v):
+                argspec = inspect.getfullargspec(v)
+                k = ''.join(['*', k, '*', inspect.formatargspec(argspec[0], argspec[1], argspec[2], argspec[3])])
             else:
                 k = ''.join(['*', k, '*'])
             # now indent all lines in k by 4 spaces
@@ -76,9 +77,9 @@ def help_dynamic(inspect_master, ob):
     for k, v in members:
         if not k.startswith('_'):
             doc = inspect.getdoc(v)
-            if inspect.ismethod(v):
-                argspec = inspect.getargspec(v)
-                k = ''.join(['*', k, '*', inspect.formatargspec(*argspec)])
+            if inspect.isfunction(v):
+                argspec = inspect.getfullargspec(v)
+                k = ''.join(['*', k, '*', inspect.formatargspec(argspec[0], argspec[1], argspec[2], argspec[3])])
             else:
                 k = ''.join(['*', k, '*'])
             # now indent all lines in k by 4 spaces
@@ -96,7 +97,7 @@ def help_static(cls, proxy_cls):
         if not k.startswith('_'):
             doc = inspect.getdoc(v)
             if inspect.ismethod(v):
-                argspec = inspect.getargspec(v)
+                argspec = inspect.getfullargspec(v)
                 k = ''.join(['*', k, '*', inspect.formatargspec(*argspec)])
             else:
                 k = ''.join(['*', k, '*'])
@@ -110,7 +111,7 @@ def help_static(cls, proxy_cls):
             if not k.startswith('_'):
                 doc = inspect.getdoc(v)
                 if inspect.ismethod(v):
-                    argspec = inspect.getargspec(v)
+                    argspec = inspect.getfullargspec(v)
                     k = ''.join(['*', k, '*', inspect.formatargspec(*argspec)])
                 else:
                     k = ''.join(['*', k, '*'])
@@ -121,11 +122,19 @@ def help_static(cls, proxy_cls):
 
 
 #
-# Initialize on startup
+# Main
 #
-def Initialize(**kwargs):
+def initialize(**kwargs):
     logger = multiprocessing.get_logger()
-    logger.info('Initialized demo.py')
+    logger.info('Initialized help.py')
+    
+    main = kwargs['main']
+    inspect = main.import_module("inspect")
+    global matplotlib
+    matplotlib = main.import_module("matplotlib")
+    #global pyqtgraph
+    #pyqtgraph = main.import_module("pyqtgraph")
+    
     kwargs['globals'].test_global = 1
     # display help
 
@@ -164,35 +173,34 @@ Overview
 ========
 
 While the underlying architecture of Pythics is generally hidden from the user,
-some knowledge of the structure may be helpful in understanding how to build and
-run programs under Pythics. When running user code, Pythics runs as a primary
-process which controls the GUI, and an additional process for each loaded user
-*program*, which we will refer to as a virtual instrument (VI). The GUI process
-itself uses multiple threads to handle the GUI and communication with the VI
-subprocess, while each VI has one primary thread and possibly additional timer
-threads in a subprocess.
+some knowledge of the structure may be helpful in understanding how to build
+and run programs under Pythics. When running user code, Pythics runs as a
+primary process which controls the GUI, and an additional process for each
+loaded user app. The GUI process itself uses multiple threads to handle the GUI
+and communication with the app subprocess, while each app has one primary
+thread and possibly additional timer threads in a subprocess.
 
-Each VI subprocess is actually a true separate process handled with the Python
-multiprocessing package. As a result, the VI subprocesses and GUI can generally
-run without blocking each other, and the VI subprocesses can even be
+Each app subprocess is actually a true separate process handled with the Python
+multiprocessing package. As a result, the app subprocesses and GUI can
+generally run without blocking each other, and the app subprocesses can even be
 distributed over multiple processors or cores as supported by the operating
-system. Additionally, even if one VI subprocess crashes, for example due to an
-error accessing low-level hardware, the Pythics GUI and other VIs should be
-undisturbed. Pythics handles all communication between the VI subprocesses and
-the GUI process, and provides means of sharing data between VIs.
+system. Additionally, even if one app subprocess crashes, for example due to an
+error accessing low-level hardware, the Pythics GUI and other apps should be
+undisturbed. Pythics handles all communication between the app subprocesses and
+the GUI process, and provides means of sharing data between apps.
 
-Writing code for a new VI in Pythics generally consists of writing two
+Writing code for a new app in Pythics generally consists of writing two
 components:
 
 #. A single XML file (a subset of XHTML) to layout the graphical user interface.
 
 #. One or more text files containing Python code. These give functionality to
-   the VI.
+   the app.
 
 The XML file is loaded by the GUI process in order to set up the interface,
-while the Python code files are loaded and ultimately executed in a VI
+while the Python code files are loaded and ultimately executed in a app
 subprocess. For each XML file loaded a new tab will be created in the
-Pythics window which holds the corresponding VI GUI and a VI subprocess which
+Pythics window which holds the corresponding app GUI and a app subprocess which
 handles the associated functionality.
 
 The XML file specifies the layout for the controls in the GUI with a structure
@@ -202,7 +210,7 @@ parameters may also be passed to controls to setup the behavior of the
 controls. The XML file can also direct Pythics to load files which contain
 Python code, for example in order to respond to a button press.
 
-The second VI component is one or more text files which contain Python code
+The second app component is one or more text files which contain Python code
 and are loaded based on requests in the XML file. The Python code typically
 takes the form of a series of Python functions with a particular format. Each
 function to be called from the GUI should take an indefinite number of keyword
@@ -210,7 +218,7 @@ arguments. In practice, when a GUI control calls a function from one of these
 files, Pythics passes the function an object for each control in the GUI with
 a `id` attribute. The `id` attribute is used as the name of the
 corresponding keyword argument. Additional functions or other code may be
-included in the Python code files for use within a VI subprocess. It may sound
+included in the Python code files for use within a app subprocess. It may sound
 complex, but the examples show that this actually a simple and effective
 protocol.
 
@@ -250,13 +258,15 @@ The `head` is actually optional, although the defaults that are used without a
 HTML Elements
 -------------
 
-Described below under `Basic Elements`.
+Basic HTML elements (such as text and navigation links) are described below 
+under `Basic Elements`. Controls (such as buttons and plots) are described 
+in this Introduction under `Controls`.
 
 
 Cascading Style Sheets (CSS)
 ----------------------------
 
-A VI's appearance can be specified in a Cascading Style Sheet (CSS), enclosed
+A app's appearance can be specified in a Cascading Style Sheet (CSS), enclosed
 between `<style type='text/css'>` and  `</style>` tags within the document
 `head`. The style sheet consist of a series of entries separated by white space
 (new lines or spaces) of the form:
@@ -264,8 +274,8 @@ between `<style type='text/css'>` and  `</style>` tags within the document
 where there may be an arbitrary number of *property:value* pairs separated
 by semicolons. The available properties and example values are given below.
 
-The *selector* in a CSS entry may take one of five forms. In order of increasing
-specificity, these are:  *tag*, .*class*, *tag*.*class*, *#id*, and
+The *selector* in a CSS entry may take one of five forms. In order of
+increasing specificity, these are:  *tag*, .*class*, *tag*.*class*, *#id*, and
 *tag#id*. When Pythics encounter an Pythics encounters an XML element in the
 body of the document, it searches for a style *property* of a given *element*
 as follows, where the first match encountered is used:
@@ -288,9 +298,9 @@ as follows, where the first match encountered is used:
 #. An entry matching the element *tag*.
 
 #. If no entry has been found, the process stated above is repeated for the
-   parent element containing the original element. As long as no entry is found,
-   the search keeps proceeding to parent elements until the `body` tag is
-   reached, which contains a default value for every property.
+   parent element containing the original element. As long as no entry is
+   found, the search keeps proceeding to parent elements until the `body` tag
+   is reached, which contains a default value for every property.
 
 
 The following properties can be set in style sheets. Not all properties have
@@ -359,7 +369,7 @@ Attributes:
   of the module to be imported to find the control class.
 
 - `id`: A string used for identifying the control in the html style sheet and
-  used as the name of the keyword argument when the control is passed to VI
+  used as the name of the keyword argument when the control is passed to app
   Python code.
 
 - `width`: A string giving the width of the control in pixels (default) or in
@@ -368,6 +378,33 @@ Attributes:
 - `height`: A string giving the height of the control in pixels. Many controls
   have a reasonable default height so this attribute may not be needed for all
   controls.
+  
+  
+Where to Begin with Controls
+----------------------------
+
+The `Main` Control is used to load a Python file, save or load parameter 
+values, and pop up various dialog boxes. Most apps will have one. `Main' is 
+either displayed as a simple line of text in the GUI or not displayed at all.
+
+To add user interaction, you will probably add one or more buttons, most 
+commonly a Button, RunButton, or EventButton. A Button can be used to trigger
+an arbitrary action. A RunButton or EventButton is most useful if you want to 
+start an action which loops repeatedly, possibly with delays added in. A 
+RunButton takes care of a lot of the timing for you, and even allows additional 
+actions to proceed while your loop is waiting for a delay. An EventButton does
+not allow other actions to take place during delays, but does offer the highest
+performance if you need to have a loop which runs very quickly but can be
+interrupted by pressing a button.
+
+NumBox, MetricNumBox, and TextBox can be used for numerical input and output. 
+A MetricNumBox is particularly useful if you want numerical inputs or outputs
+with metric units and prefixes.
+
+mpl.Plot2D is the easist plotting control to use. mpl.Chart2D is more 
+specialized for stripchart-like plots, and mpl.Canvas exposes the full 
+capabilities of matplotlib, but handles less of the redrawing and updating 
+for you.
 """
 
     kwargs['element_help'].value = \
@@ -426,19 +463,20 @@ Attributes:
     Used within an object to pass additional parameters."""
 
     kwargs['QWidgets_help'].value = \
-    """Arbitrary PyQt-compatible widgets can be used within Pythics. They are
+    """Arbitrary Python and Qt-compatible widgets can be used within Pythics. They are
 included with the `classid` parameter of an `object`, as with other controls.
 The full include name must be specified, e.g.:
-<object classid='PyQt4.QtGui.QCalendarWidget' id='calendar' width='500' height='300'></object>
+<object classid='PySide2.QtWidgets.QCalendarWidget' id='calendar' width='500' height='300'></object>
 
 All methods and attributes normally accesible from Python are accessible in
 Pythics. If you need access to a library to create objects to be passed to the
-control, use an `Import` control rather than directly importing the library to
-allow the objects to be created in the correct process.
+control, use the `import_module` method of a Main control rather than directly 
+importing the library to allow the objects to be created in the correct 
+process.
 
 This capability can be useful for PyQt controls that are not specifially
 supported by Pythics, or for external libraries such as pyqtgraph, a fast
-ploting library that could be useful for real-time plotting."""
+plotting library that could be useful for real-time plotting."""
 
     kwargs['copying'].value = \
     """                    GNU GENERAL PUBLIC LICENSE
@@ -1117,57 +1155,103 @@ Public License instead of this License.  But first, please read
 <http://www.gnu.org/philosophy/why-not-lgpl.html>."""
 
     # Control help
-    inspect_master = kwargs['inspect_master']
-    kwargs['Button_help'].value = help_dynamic(inspect_master, kwargs['button_1'])
-    kwargs['CheckBox_help'].value = help_dynamic(inspect_master, kwargs['check_box_1'])
-    kwargs['ChoiceBox_help'].value = help_dynamic(inspect_master, kwargs['choice_box_1'])
-    kwargs['ChoiceButton_help'].value = help_dynamic(inspect_master, kwargs['choice_button_1'])
-    kwargs['EventButton_help'].value = help_dynamic(inspect_master, kwargs['event_button_1'])
-    kwargs['FileDialog_help'].value = help_dynamic(inspect_master, kwargs['file_dialog_1'])
-    kwargs['FilePicker_help'].value = help_dynamic(inspect_master, kwargs['file_picker_1'])
+    kwargs['Main_help'].value = help_dynamic(inspect, kwargs['main'])
+    kwargs['Button_help'].value = help_dynamic(inspect, kwargs['button_1'])
+    kwargs['CheckBox_help'].value = help_dynamic(inspect, kwargs['check_box_1'])
+    kwargs['ChoiceBox_help'].value = help_dynamic(inspect, kwargs['choice_box_1'])
+    kwargs['ChoiceButton_help'].value = help_dynamic(inspect, kwargs['choice_button_1'])
+    kwargs['EventButton_help'].value = help_dynamic(inspect, kwargs['event_button_1'])
+    kwargs['FilePicker_help'].value = help_dynamic(inspect, kwargs['file_picker_1'])
     kwargs['GlobalNamespace_help'].value = help_static(pythics.controls.GlobalNamespace, None)
     kwargs['GlobalAction_help'].value = help_static(pythics.controls.GlobalAction, None)
-    kwargs['GlobalTrigger_help'].value = help_dynamic(inspect_master, kwargs['global_trigger'])
-    kwargs['Image_help'].value = help_dynamic(inspect_master, kwargs['image_1'])
-    kwargs['ImageButton_help'].value = help_dynamic(inspect_master, kwargs['image_button_2'])
-    kwargs['InputDialog_help'].value = help_dynamic(inspect_master, kwargs['input_dialog_1'])
-    kwargs['Knob_help'].value = help_dynamic(inspect_master, kwargs['knob_1'])
-    kwargs['MessageDialog_help'].value = help_dynamic(inspect_master, kwargs['message_dialog_1'])
-    kwargs['Meter_help'].value = help_dynamic(inspect_master, kwargs['meter_1'])
-    kwargs['NumBox_help'].value = help_dynamic(inspect_master, kwargs['num_box_1'])
-    kwargs['RadioButtonBox_help'].value = help_dynamic(inspect_master, kwargs['radio_button_box_1'])
+    kwargs['GlobalTrigger_help'].value = help_dynamic(inspect, kwargs['global_trigger'])
+    kwargs['Image_help'].value = help_dynamic(inspect, kwargs['image_1'])
+    kwargs['ImageButton_help'].value = help_dynamic(inspect, kwargs['image_button_2'])
+    kwargs['Knob_help'].value = help_dynamic(inspect, kwargs['knob_1'])
+    kwargs['Meter_help'].value = help_dynamic(inspect, kwargs['meter_1'])
+    kwargs['MetricNumBox_help'].value = help_dynamic(inspect, kwargs['metric_num_box_1'])
+    kwargs['NumBox_help'].value = help_dynamic(inspect, kwargs['num_box_1'])
+    kwargs['RadioButtonBox_help'].value = help_dynamic(inspect, kwargs['radio_button_box_1'])
     kwargs['RunButton_help'].value = help_static(pythics.controls.RunButton, pythics.proxies.RunButtonProxy)
-    kwargs['ScrollBar_help'].value = help_dynamic(inspect_master, kwargs['scroll_bar_1'])
-    kwargs['Shell_help'].value = help_dynamic(inspect_master, kwargs['shell_1'])
+    kwargs['ScrollBar_help'].value = help_dynamic(inspect, kwargs['scroll_bar_1'])
+    kwargs['Shell_help'].value = help_dynamic(inspect, kwargs['shell_1'])
     kwargs['SubWindow_help'].value = help_static(pythics.controls.SubWindow, None)
-    kwargs['TextBox_help'].value = help_dynamic(inspect_master, kwargs['text_box_1'])
-    kwargs['TextIOBox_help'].value = help_dynamic(inspect_master, kwargs['text_io_box_1'])
+    kwargs['TextBox_help'].value = help_dynamic(inspect, kwargs['text_box_1'])
+    kwargs['TextIOBox_help'].value = help_dynamic(inspect, kwargs['text_io_box_1'])
     kwargs['Timer_help'].value = help_static(pythics.controls.Timer, pythics.proxies.TimerProxy)
-    kwargs['ScriptLoader_help'].value = help_static(pythics.controls.ScriptLoader, None)
-    kwargs['ParameterLoader_help'].value = help_static(pythics.controls.ParameterLoader, None)
     if 'mpl_canvas_1' in kwargs:
-        kwargs['mplCanvas_help'].value = help_dynamic(inspect_master, kwargs['mpl_canvas_1'])
+        kwargs['mplCanvas_help'].value = help_dynamic(inspect, kwargs['mpl_canvas_1'])
     if 'mpl_plot_2d_1' in kwargs:
-        kwargs['mplPlot2D_help'].value = help_dynamic(inspect_master, kwargs['mpl_plot_2d_1'])
+        kwargs['mplPlot2D_help'].value = help_dynamic(inspect, kwargs['mpl_plot_2d_1'])
     if 'mpl_chart_2d_1' in kwargs:
-        kwargs['mplChart2D_help'].value = help_dynamic(inspect_master, kwargs['mpl_chart_2d_1'])
-    if 'qwt_chart_1' in kwargs:
-        kwargs['qwtChart_help'].value = help_dynamic(inspect_master, kwargs['qwt_chart_1'])
-    if 'qwt_gauge_1' in kwargs:
-        kwargs['qwtGauge_help'].value = help_dynamic(inspect_master, kwargs['qwt_gauge_1'])
-    if 'qwt_knob_1' in kwargs:
-        kwargs['qwtKnob_help'].value = help_dynamic(inspect_master, kwargs['qwt_knob_1'])
-    if 'qwt_plot_1' in kwargs:
-        kwargs['qwtPlot_help'].value = help_dynamic(inspect_master, kwargs['qwt_plot_1'])
-    if 'qwt_point_plot_1' in kwargs:
-        kwargs['qwtPointLinePlot_help'].value = help_dynamic(inspect_master, kwargs['qwt_point_plot_1'])
-    if 'qwt_slider_1' in kwargs:
-        kwargs['qwtSlider_help'].value = help_dynamic(inspect_master, kwargs['qwt_slider_1'])
+        kwargs['mplChart2D_help'].value = help_dynamic(inspect, kwargs['mpl_chart_2d_1'])
+    kwargs['openglScopePlot_help'].value = help_dynamic(inspect, kwargs['opengl_scope_plot_1'])
 
 
-def Terminate(globals, **kwargs):
+def terminate(**kwargs):
     logger = multiprocessing.get_logger()
-    logger.info('Terminated demo.py')
+    logger.info('Terminated help.py')
+
+
+def test_main_file_dialog_1(main, main_file_dialog_result, **kwargs):
+    main_file_dialog_result.value = main.open_file_dialog_open_file()
+
+def test_main_file_dialog_2(main, main_file_dialog_result, **kwargs):
+    main_file_dialog_result.value = main.open_file_dialog_save_file()
+
+def test_main_file_dialog_3(main, main_file_dialog_result, **kwargs):
+    main_file_dialog_result.value = main.open_file_dialog_directory()
+
+def test_main_input_dialog_1(main, main_input_dialog_result_1, **kwargs):
+    v = main.open_input_dialog_int(title='Integer Input', message='Enter a value: ', 
+                              default_value=2, minimum=0, maximum=100, step=2)
+    main_input_dialog_result_1.value = v
+
+def test_main_input_dialog_2(main, main_input_dialog_result_1, **kwargs):
+    v = main.open_input_dialog_double(title='Float Input', message='Enter a value: ', 
+                                 default_value=1.0, minimum=-10.0, maximum=10.0, decimals=2)
+    main_input_dialog_result_1.value = v
+
+def test_main_input_dialog_3(main, main_input_dialog_result_1, **kwargs):
+    v = main.open_input_dialog_item(title='Item Input', message='Select a value: ', 
+                                    items=['item 1', 'item 2', 'item 3', 'item 4'], 
+                                    default_item=0, editable=True)
+    main_input_dialog_result_1.value = v
+
+def test_main_input_dialog_4(main, main_input_dialog_result_1, **kwargs):
+    v = main.open_input_dialog_text(title='Text Input', 
+                                    message='Enter a value: ', 
+                                    default_value='default text')
+    main_input_dialog_result_1.value = v
+    
+def test_main_message_dialog_1(main, main_message_dialog_result_1, **kwargs):
+    v = main.open_message_dialog('Message Box', 'Test Question', 
+                                 severity='question',
+                                 ok_button=False, yes_button=True, no_button=True)
+    main_message_dialog_result_1.value = v
+                    
+def test_main_message_dialog_2(main, main_message_dialog_result_1, **kwargs):
+    v = main.open_message_dialog('Message Box', 'Test Information', 
+                                 severity='information')
+    main_message_dialog_result_1.value = v
+                    
+def test_main_message_dialog_3(main, main_message_dialog_result_1, **kwargs):
+    v = main.open_message_dialog('Message Box', 'Test Warning', 
+                                 severity='warning',
+                                 ok_button=True, cancel_button=True)
+    main_message_dialog_result_1.value = v
+                    
+def test_main_message_dialog_4(main, main_message_dialog_result_1, **kwargs):
+    v = main.open_message_dialog('Message Box', 'Test Critical', 
+                                 severity='critical',
+                                 ok_button=False, abort_button=True, retry_button=True)
+    main_message_dialog_result_1.value = v
+                    
+def test_main_parameter_save(main, main_parameter_file_picker_1, **kwargs):
+    main.save_parameters(main_parameter_file_picker_1.value)
+
+def test_main_parameter_load(main, main_parameter_file_picker_2, **kwargs):
+    main.load_parameters(main_parameter_file_picker_2.value)
 
 
 #
@@ -1240,17 +1324,7 @@ def test_dial_1(dial_1, **kwargs):
 
 
 #
-# FileDialog
-#
-def test_file_dialog_1(file_dialog_1, file_dialog_result, **kwargs):
-    file_dialog_result.value = file_dialog_1.get_open()
-
-def test_file_dialog_2(file_dialog_1, file_dialog_result, **kwargs):
-    file_dialog_result.value = file_dialog_1.get_save()
-
-
-#
-# FileBrowseButton
+# FilePicker
 #
 def test_file_picker(file_picker_1, file_picker_result, **kwargs):
     file_picker_result.value = file_picker_1.value
@@ -1305,24 +1379,31 @@ def test_image_right_up(image_1, image_right_up_result, **kwargs):
 def test_image(image_1, image_2, image_image_filename, **kwargs):
     filename = image_image_filename.value
     im = PIL.Image.open(filename)
-    image_1.image = im
-    image_2.image = im
+    image_1.display(im.mode, im.size, im.tobytes())
+    image_2.display(im.mode, im.size, im.tobytes())
 
 def image_get_loop(image_1, **kwargs):
-    for i in range(10):
-        temp = image_1.image
-        image_1.image = temp
+    pass
+#    for i in range(10):
+#        temp = image_1.image
+#        image_1.image = temp
 
 def test_image_with_shared(image_3, image_with_shared_image_filename, **kwargs):
     filename = image_with_shared_image_filename.value
     im = PIL.Image.open(filename)
-    #image_3.setup_shared_memory(im.size[0], im.size[1])
-    image_3.image = im
-
+    image_3.display(im.mode, im.size, im.tobytes())
+#    N = 523
+#    a = np.sin((4.0*np.pi/N)*np.diag(np.arange(N, dtype=np.float32)))
+#    a *= 127
+#    a += 128
+#    a = a.astype(np.uint8)
+#    image_3.display('L', (N, N), a.tobytes())
+    
 def image_with_shared_get_loop(image_3, **kwargs):
-    for i in range(10):
-        temp = image_3.image
-        image_3.image = temp
+    pass
+#    for i in range(10):
+#        temp = image_3.image
+#        image_3.image = temp
 
 
 #
@@ -1333,39 +1414,6 @@ def test_image_button_1(image_button_result_1, **kwargs):
 
 def test_image_button_2(image_button_2, image_button_result_2, **kwargs):
     image_button_result_2.value = image_button_2.value
-
-
-#
-# InputDialog
-#
-
-def test_input_dialog_1_1(input_dialog_1, input_dialog_result_1, **kwargs):
-    input_dialog_1.input_type = int
-    input_dialog_1.int_default_value = 4
-    input_dialog_1.int_min = 0
-    input_dialog_1.int_max = 100
-    input_dialog_1.int_step = 2
-    input_dialog_result_1.value = input_dialog_1.open()
-
-def test_input_dialog_1_2(input_dialog_1, input_dialog_result_1, **kwargs):
-    input_dialog_1.input_type = float
-    input_dialog_1.float_default_value = -5.0
-    input_dialog_1.float_min = -10.0
-    input_dialog_1.float_max = 1000.0
-    input_dialog_1.float_decimals = 2
-    input_dialog_result_1.value = input_dialog_1.open()
-
-def test_input_dialog_1_3(input_dialog_1, input_dialog_result_1, **kwargs):
-    input_dialog_1.input_type = list
-    input_dialog_1.list_items = ['item 1', 'item 2', 'item 3', 'item 4']
-    input_dialog_1.list_default_item = 1
-    input_dialog_1.list_editable = True
-    input_dialog_result_1.value = input_dialog_1.open()
-
-def test_input_dialog_1_4(input_dialog_1, input_dialog_result_1, **kwargs):
-    input_dialog_1.input_type = str
-    input_dialog_1.str_default_value = 'default text'
-    input_dialog_result_1.value = input_dialog_1.open()
 
 
 #
@@ -1394,18 +1442,18 @@ def test_edit_list_box_1(list_box_1, list_box_edit_result_1, **kwargs):
 
 
 #
-# MessageDialog
-#
-def test_message_dialog_1(message_dialog_1, message_dialog_result_1, **kwargs):
-    #message_dialog_1.message = message_dialog_1.message + '1'
-    message_dialog_result_1.value = message_dialog_1.open()
-
-#
 # Meter
 #
 def test_meter_1(meter_1, **kwargs):
     meter_1.value = np.random.random()*200.0
-    
+
+
+#
+# MetricNumBox
+#
+def test_metric_num_box_1(metric_num_box_1, metric_num_box_result_1, **kwargs):
+    metric_num_box_result_1.value = metric_num_box_1.value
+
 
 #
 # NumBox
@@ -1426,7 +1474,7 @@ def test_num_box_3(num_box_3, num_box_result_3, **kwargs):
 def test_num_grid_1(num_grid_1, **kwargs):
     a = npr.rand(20, 10)
     num_grid_1.value = a
-
+    
 
 #
 # RadioButtonBox
@@ -1485,13 +1533,46 @@ def test_slider_2(slider_2, slider_result, **kwargs):
 #
 # EventButton
 #
-def test_event_button_1(event_button_1, event_button_result, **kwargs):
+def test_event_button_1(event_button_1, event_button_result_1, **kwargs):
     event_button_1.clear()
+    event_button_1.start_interval()
     while True:
-        event_button_result.value = time.time()
+        event_button_result_1.value = time.time()
         time.sleep(0.5)
-        if event_button_1.wait_interval(5.0): break
-    event_button_result.value = 'Stopped.'
+        if event_button_1.wait_interval(2.0): break
+    event_button_result_1.value = 'Stopped.'
+
+def test_event_button_2(event_button_2, event_button_result_2, **kwargs):
+    event_button_2.clear()
+    n = 0
+    event_button_result_2.value = n
+    while not event_button_2.is_set():
+        if n % 100000 == 0:
+            # update only occasionally for speed
+            event_button_result_2.value = n
+        n += 1
+    event_button_result_2.value = n
+
+def test_event_button_3(event_button_3, event_button_result_3, **kwargs):
+    n = 0
+    event_button_result_3.value = n
+    while not event_button_3.is_set():
+        if n % 100000 == 0:
+            # update only occasionally for speed
+            event_button_result_3.value = n
+        n += 1
+    event_button_result_3.value = n
+
+def test_event_button_4(event_button_4, event_button_result_4, **kwargs):
+    event_button_4.start_interval()
+    n = 0
+    event_button_result_4.value = n
+    while not event_button_4.is_set():
+        event_button_result_4.value = n
+        if event_button_4.wait_interval(1.0): break
+        n += 1
+    event_button_result_4.value = 0.0
+
 
 #
 # SubWindow
@@ -1574,7 +1655,7 @@ def test_calendar(qwidget_1, qwidget_2, **kwargs):
 #
 # mpl.Canvas
 #
-def test_mpl_canvas_1(mpl_canvas_1, mpl_canvas_choices, matplotlib, **kwargs):
+def test_mpl_canvas_1(mpl_canvas_1, mpl_canvas_choices, **kwargs):
     choice = mpl_canvas_choices.value
     if choice == 'simple plot':
         mpl_canvas_1.figure.clear()
@@ -1722,7 +1803,7 @@ def test_mpl_plot_2d(mpl_plot_2d_1, mpl_plot_2d_2, mpl_plot_2d_3, mpl_plot_2d_4,
 
 def test_event_mpl_plot_2d_4(mpl_plot_2d_4, **kwargs):
     event = mpl_plot_2d_4.events.pop()
-    print 'EVENT:', event.name
+    print('EVENT:', event.name)
 
 
 #
@@ -1763,85 +1844,16 @@ def test_mpl_chart_2d_1_clear(mpl_chart_2d_1, **kwargs):
 
 
 #
-# MPLPlot
+# opengl.ScopePlot
 #
-def test_mpl_plot_1_1(mpl_plot_1, **kwargs):
-    t = np.arange(0.0, 2.0, 0.01)
-    s = np.sin(2*pi*t)
-    mpl_plot_1.plot(t, s, linewidth=1.0)
-    mpl_plot_1.set_xlabel('time (s)')
-    mpl_plot_1.set_ylabel('voltage (mV)')
-    mpl_plot_1.set_title('Simple Plot')
-    mpl_plot_1.grid(True)
-    mpl_plot_1.show()
+def test_opengl_scope_plot_1_setup(opengl_scope_plot_1, **kwargs):
+    opengl_scope_plot_1.new_curve('CH1', line_color=(0,0,255,255), line_width=1)
 
-def test_mpl_plot_1_2(mpl_plot_1, **kwargs):
-    N = 150
-    r = 2*npr.rand(N)
-    theta = 2*pi*npr.rand(N)
-    area = 200*r**2*npr.rand(N)
-    colors = theta
-    mpl_plot_1.setup_axes(projection='polar')
-    mpl_plot_1.scatter(theta, r, c=colors, s=area)
-    mpl_plot_1.show()
-
-def test_mpl_plot_1_3(mpl_plot_1, **kwargs):
-    N = 5
-    xs = np.arange(N)
-    y1s = npr.rand(len(xs))
-    y2s = npr.rand(len(xs))
-    width=0.35
-    mpl_plot_1.bar(xs, y1s, width, color='r')
-    mpl_plot_1.bar(xs+width, y2s, width, color='y')
-    mpl_plot_1.set_xticks(xs+width)
-    mpl_plot_1.set_xticklabels(('A', 'B', 'C', 'D', 'E'))
-    mpl_plot_1.set_xlabel('Group')
-    mpl_plot_1.set_ylabel('Scores')
-    mpl_plot_1.set_title('Simple Bar Chart')
-    mpl_plot_1.show()
-
-def test_mpl_plot_1_4(mpl_plot_1, **kwargs):
-    zs = 100*np.random.rand(100, 150)
-    mpl_plot_1.imshow(zs, interpolation='nearest', animated=True)
-    mpl_plot_1.set_xlabel('X')
-    mpl_plot_1.set_ylabel('Y')
-    mpl_plot_1.set_title('Image Plot')
-    mpl_plot_1.colorbar()
-    mpl_plot_1.show()
-
-def test_mpl_plot_1_5(mpl_plot_1, **kwargs):
-    r_steps = 20
-    theta_steps = 80
-    mpl_plot_1.setup_axes(projection='polar')
-    theta_grid, step = np.linspace(0, 2*np.pi, theta_steps+1, endpoint=True, retstep=True)
-    theta_grid -= step/2.0
-    r_grid = np.linspace(0, 1.0, r_steps+1, endpoint=True)
-    X, Y = np.meshgrid(theta_grid, r_grid) #rectangular plot of polar data
-    zs = np.zeros((r_steps, theta_steps))
-    thetas = np.linspace(0, 2*np.pi, theta_steps, endpoint=False)
-    rs, step = np.linspace(0, 1.0, r_steps, endpoint=False, retstep=True)
-    rs += step/2.0
-    for ri in range(r_steps):
-        for ti in range(theta_steps):
-            zs[ri, ti] = np.sin(2*np.pi*rs[ri])*np.cos(4*thetas[ti])
-    #mpl_plot_1.pcolormesh(X, Y, zs)
-    #mpl_plot_1.pcolor(X, Y, zs)
-    #mpl_plot_1.pcolorfast(X, Y, zs)
-    mpl_plot_1.pcolor(X, Y, zs)
-    mpl_plot_1.set_title('Polar Image Plot')
-    mpl_plot_1.show()
-    zs2 = zs.copy()
-    for ri in range(r_steps):
-        for ti in range(theta_steps):
-            zs2[ri, ti] = np.sin(2*np.pi*rs[ri])*np.sin(4*thetas[ti])
-    mpl_plot_1.update_pcolor_data(zs2)
-    mpl_plot_1.show()
-    mpl_plot_1.update_pcolor_data(zs)
-    mpl_plot_1.show()
-
-def test_mpl_plot_1_clear(mpl_plot_1, **kwargs):
-    mpl_plot_1.reset()
-    mpl_plot_1.show()
+def test_opengl_scope_plot_1_plot(opengl_scope_plot_1, **kwargs):
+    N = 1024
+    x = np.linspace(0, 1.0, num=N)
+    y = 0.5*np.random.rand(N) + 0.25
+    opengl_scope_plot_1.set_data('CH1', x, y)
 
 
 #
@@ -1916,237 +1928,3 @@ def test_pyqtgraph(pyqtgraph, pyqtgraph_plot_widget, pyqtgraph_graphics_layout_w
     p2.plot([1,3,2,4,3,5])
     p4.plot([1,3,2,4,3,5])
     p5.plot([1,3,2,4,3,5])
-
-#
-# qwt.Chart
-#
-def test_qwt_chart_1_1(qwt_chart_1, **kwargs):
-    global last_x1
-    xs = np.arange(0.0, 20.0, 0.01)
-    ys_1 = 2*np.sin(2*pi*xs)
-    ys_2 = npr.rand(len(xs))
-    ys_3 = 2*np.cos(2*pi*xs)
-    ys_4 = -npr.rand(len(xs))
-    data = np.column_stack([xs, ys_1, ys_2, ys_3, ys_4])
-    qwt_chart_1.curves_per_plot = (2, 2)
-    qwt_chart_1.set_plot_properties(0, title='Data 1', x_title='time (s)',
-                                y_title='distance (m)')
-    qwt_chart_1.set_plot_properties(1, title='Data 2', x_title='speed (m/s)',
-                                y_title='height (m)')
-    qwt_chart_1.span = 100
-    qwt_chart_1.data = data
-    last_x1 = xs[-1]
-
-def test_qwt_chart_1_2(qwt_chart_1, **kwargs):
-    qwt_chart_1.set_plot_properties(0, background='yellow', x_grid=True,
-                                y_grid=True)
-    qwt_chart_1.set_plot_properties(1, background='pink', x_grid=True, y_grid=True,
-                                dashed_grid=True)
-    qwt_chart_1.set_curve_properties(0, line_color='red', line_width=2)
-    qwt_chart_1.set_curve_properties(1, line_color='green', line_width=1)
-    qwt_chart_1.set_curve_properties(2, line_color='yellow', line_width=2)
-    qwt_chart_1.set_curve_properties(3, line_color='blue', line_width=1)
-    qwt_chart_1.update()
-
-def test_qwt_chart_1_3(qwt_chart_1, **kwargs):
-    global last_x1
-    xs = np.arange(last_x1, last_x1+20.0, 0.01)
-    ys_1 = 2*np.sin(2*pi*xs)
-    ys_2 = npr.rand(len(xs))
-    ys_3 = 2*np.cos(2*pi*xs)
-    ys_4 = -npr.rand(len(xs))
-    data = np.column_stack([xs, ys_1, ys_2, ys_3, ys_4])
-    qwt_chart_1.append_array(data)
-#    qwt_chart_1.append(data[0])
-    last_x1 = xs[-1]
-
-def test_qwt_chart_1_clear(qwt_chart_1, **kwargs):
-    qwt_chart_1.clear()
-
-
-#
-# qwt.Plot
-#
-def test_qwt_plot_1_1(qwt_plot_1, **kwargs):
-    global first_x2, last_x2
-    xs = np.arange(0.0, 2.0, 0.01)
-    data_1 = 2*np.sin(2*pi*xs)
-    data_2 = npr.rand(len(xs))
-    data_3 = 2*np.cos(2*pi*xs)
-    data_4 = -npr.rand(len(xs))
-    qwt_plot_1.set_plot_properties(title='Data 1', x_title='time (s)', y_title='distance (m)')
-    qwt_plot_1.new_element('first_curve', 'curve')
-    qwt_plot_1.set_element_data('first_curve', x=xs, y=data_1)
-    qwt_plot_1.new_element('second_curve', 'curve')
-    qwt_plot_1.set_element_data('second_curve', x=xs, y=data_2)
-    qwt_plot_1.new_element('third_curve', 'curve')
-    qwt_plot_1.set_element_data('third_curve', x=xs, y=data_3)
-    qwt_plot_1.new_element('fourth_curve', 'curve')
-    qwt_plot_1.set_element_data('fourth_curve', x=xs, y=data_4)
-    qwt_plot_1.update()
-
-def test_qwt_plot_1_2(qwt_plot_1, **kwargs):
-    qwt_plot_1.set_plot_properties(background='yellow', x_grid=True, y_grid=True, dashed_grid=True)
-    qwt_plot_1.set_element_properties('first_curve', line_color='red', line_width=2)
-    qwt_plot_1.set_element_properties('second_curve', line_color='green', line_width=1)
-    qwt_plot_1.set_element_properties('third_curve', line_color='violet', line_width=2)
-    qwt_plot_1.set_element_properties('fourth_curve', line_color='blue', line_width=1)
-    qwt_plot_1.update()
-
-def test_qwt_plot_1_3(qwt_plot_1, **kwargs):
-    xs = np.arange(0.0, 2.0, 0.01)
-    data_2 = npr.rand(len(xs))
-    data_4 = -npr.rand(len(xs))
-    qwt_plot_1.set_element_data('second_curve', x=xs, y=data_2)
-    qwt_plot_1.set_element_data('fourth_curve', x=xs, y=data_4)
-    qwt_plot_1.update()
-
-#def test_qwt_plot_1_4(qwt_plot_1, **kwargs):
-#    zs = np.eye(10, 15)
-#    qwt_plot_1.new_element('first_image', 'image')
-#    qwt_plot_1.set_element_data('first_image', z=zs)
-#    qwt_plot_1.update()
-
-def test_qwt_plot_1_clear(qwt_plot_1, **kwargs):
-    qwt_plot_1.clear()
-
-
-#
-# qwt.PointLinePlot
-#
-def test_point_line_plot_setup(qwt_point_plot_1, **kwargs):
-    qwt_point_plot_1.set_plot_properties(x_title='X Axis Label',
-                                     y_title='Y Axis Label',
-                                     title='Simple XY Plot',
-                                     x_grid=True, y_grid=True,
-                                     dashed_grid=True)
-
-def test_qwt_point_line_plot_1_point(qwt_point_plot_1,
-                            point_plot_symbol,
-                            point_plot_line_color,
-                            point_plot_fill_color,
-                            point_plot_line_width,
-                            point_plot_size,
-                            **kwargs):
-    x = 10*random.random()
-    y = 10*random.random()
-    qwt_point_plot_1.draw_point((x, y),
-                            symbol=point_plot_symbol.value,
-                            line_color=point_plot_line_color.value,
-                            fill_color=point_plot_fill_color.value,
-                            line_width=point_plot_line_width.value,
-                            size=point_plot_size.value)
-
-def test_qwt_point_line_plot_1_line(qwt_point_plot_1,
-                           point_plot_line_color,
-                           point_plot_line_width,
-                           **kwargs):
-    x1 = 10*random.random()
-    y1 = 10*random.random()
-    x2 = 10*random.random()
-    y2 = 10*random.random()
-    qwt_point_plot_1.draw_line((x1, y1), (x2, y2),
-                           line_color=point_plot_line_color.value,
-                           line_width=point_plot_line_width.value)
-
-def test_qwt_point_line_plot_1_line_to(qwt_point_plot_1,
-                              point_plot_line_color,
-                              point_plot_line_width,
-                              **kwargs):
-    x = 10*random.random()
-    y = 10*random.random()
-    qwt_point_plot_1.draw_line_to((x, y),
-                              line_color=point_plot_line_color.value,
-                              line_width=point_plot_line_width.value)
-
-def test_qwt_point_line_plot_1_start_line(qwt_point_plot_1, **kwargs):
-    x = 10*random.random()
-    y = 10*random.random()
-    qwt_point_plot_1.start_line((x, y))
-
-def test_qwt_point_line_plot_1_clear(qwt_point_plot_1, **kwargs):
-    qwt_point_plot_1.clear()
-
-
-def test_qwt_point_line_plot_1_draw_point_and_points(qwt_point_plot_1,
-                            point_plot_symbol,
-                            point_plot_line_color,
-                            point_plot_fill_color,
-                            point_plot_line_width,
-                            point_plot_size,
-                            **kwargs):
-    x = 10*random.random()
-    y = 10*random.random()
-    qwt_point_plot_1.draw_point((x, y), key='test_point',
-                            symbol=point_plot_symbol.value,
-                            line_color=point_plot_line_color.value,
-                            fill_color=point_plot_fill_color.value,
-                            line_width=point_plot_line_width.value,
-                            size=point_plot_size.value)
-    qwt_point_plot_1.draw_points(npr.rand(5,2), key='test_points',
-                            symbol=point_plot_symbol.value,
-                            line_color=point_plot_line_color.value,
-                            fill_color=point_plot_fill_color.value,
-                            line_width=point_plot_line_width.value,
-                            size=point_plot_size.value)
-
-def test_qwt_point_line_plot_1_change_point_data(qwt_point_plot_1, **kwargs):
-    x = 10*random.random()
-    y = 10*random.random()
-    qwt_point_plot_1.change_point_data((x, y), key='test_point')
-    qwt_point_plot_1.change_points_data(npr.rand(5,2), key='test_points')
-
-def test_qwt_point_line_plot_1_change_point_properties(qwt_point_plot_1,
-                            point_plot_symbol,
-                            point_plot_line_color,
-                            point_plot_fill_color,
-                            point_plot_line_width,
-                            point_plot_size,
-                            **kwargs):
-    qwt_point_plot_1.change_point_properties(key='test_point',
-                            symbol=point_plot_symbol.value,
-                            line_color=point_plot_line_color.value,
-                            fill_color=point_plot_fill_color.value,
-                            line_width=point_plot_line_width.value,
-                            size=point_plot_size.value)
-    qwt_point_plot_1.change_point_properties(key='test_points',
-                            symbol=point_plot_symbol.value,
-                            line_color=point_plot_line_color.value,
-                            fill_color=point_plot_fill_color.value,
-                            line_width=point_plot_line_width.value,
-                            size=point_plot_size.value)
-
-def test_qwt_point_line_plot_1_draw_line_and_lines(qwt_point_plot_1,
-                           point_plot_line_color,
-                           point_plot_line_width,
-                           **kwargs):
-    x1 = 10*random.random()
-    y1 = 10*random.random()
-    x2 = 10*random.random()
-    y2 = 10*random.random()
-    qwt_point_plot_1.draw_line((x1, y1), (x2, y2), key='test_line',
-                           line_color=point_plot_line_color.value,
-                           line_width=point_plot_line_width.value)
-    qwt_point_plot_1.draw_lines(npr.rand(5,2), key='test_lines',
-                           line_color=point_plot_line_color.value,
-                           line_width=point_plot_line_width.value)
-
-def test_qwt_point_line_plot_1_change_line_data(qwt_point_plot_1, **kwargs):
-    x1 = 10*random.random()
-    y1 = 10*random.random()
-    x2 = 10*random.random()
-    y2 = 10*random.random()
-    qwt_point_plot_1.change_line_data((x1, y1), (x2, y2), key='test_line')
-    qwt_point_plot_1.change_lines_data(npr.rand(5,2), key='test_lines')
-
-
-def test_qwt_point_line_plot_1_change_line_properties(qwt_point_plot_1,
-                           point_plot_line_color,
-                           point_plot_line_width,
-                           **kwargs):
-    qwt_point_plot_1.change_line_properties(key='test_line',
-                           line_color=point_plot_line_color.value,
-                           line_width=point_plot_line_width.value)
-    qwt_point_plot_1.change_line_properties(key='test_lines',
-                           line_color=point_plot_line_color.value,
-                           line_width=point_plot_line_width.value)

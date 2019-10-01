@@ -21,17 +21,29 @@
 #
 # load libraries
 #
+import logging
 import math
 import numpy as np
 
-from pythics.lib import UpdateTimer
+
+# setup the logger
+logger = logging.getLogger('log')
+#logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 #
 # basic functionality: initialize, start, stop, clear
 #
 def initialize(shell, **kwargs):
+    # setup the logger
+    sh = logging.StreamHandler(kwargs['messages'])
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    sh.setFormatter(formatter)
+    logger.addHandler(sh)
+    # setup the python shell
     shell.interact(kwargs.copy())
+    # clear plot
     clear(**kwargs)
 
 
@@ -52,7 +64,7 @@ def clear(messages, plot_1, **kwargs):
 #
 
 def run(prob_m, prob_N_particles, prob_epsilon, prob_r_zero, prob_v_max, prob_g, prob_dt, 
-        dt_per_update, algorithm, stop, messages, plot_1, **kwargs):
+        steps_per_update, algorithm, start_stop, plot_1, **kwargs):
     N_particles = prob_N_particles.value
     m = prob_m.value
     v_max = prob_v_max.value
@@ -137,7 +149,7 @@ def run(prob_m, prob_N_particles, prob_epsilon, prob_r_zero, prob_v_max, prob_g,
             y[4*N_particles_sqrt*i+4*j+2] = grid[i]
     y[1::4] *= v_max/np.sqrt(y[1::4]**2 + y[3::4]**2)
     y[3::4] *= v_max/np.sqrt(y[1::4]**2 + y[3::4]**2)
-    messages.write('Starting integration.\n')
+    logger.info('starting integration')
     # plot initial positions of particles
     plot_data = np.zeros((N_particles, 2))
     # x positions
@@ -153,8 +165,10 @@ def run(prob_m, prob_N_particles, prob_epsilon, prob_r_zero, prob_v_max, prob_g,
     # initialization for velocity Verlet
     if a == 'velocity_Verlet':
         f(t, y, f_return, g, epsilon, r_zero)
-    timer = UpdateTimer(dt_per_update.value)
-    while True:
+    step_N = 0
+    run = True
+    update_N = steps_per_update.value
+    while run:
         if a == 'Euler':
             Euler(f, dt, t, y, g, epsilon, r_zero)
         elif a == 'Euler_symplectic':
@@ -166,18 +180,19 @@ def run(prob_m, prob_N_particles, prob_epsilon, prob_r_zero, prob_v_max, prob_g,
         elif a == 'RK4':
             RK4(f, dt, t, y, g, epsilon, r_zero)
         t += dt
-        if timer.check():
+        if step_N % update_N == 0:
             # x postions
             plot_data[:,0] = y[0::4]
             # y positions
             plot_data[:,1] = y[2::4]
             plot_1.set_data('particles', plot_data)
             # grab any new values from GUI
-            if stop.value: break         
-            timer.dt = dt_per_update.value
             g = prob_g.value
             epsilon = prob_epsilon.value
             r_zero = prob_r_zero.value
+            update_N = steps_per_update.value
+            run = start_stop.value
+            yield 0.01
+        step_N += 1
     # reset the stop button in case it was pushed
-    stop.value = False
-    messages.write('Done. t = %g\n' % t)
+    logger.info('done, t = %g' % t)
