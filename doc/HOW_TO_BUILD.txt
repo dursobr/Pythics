@@ -1,8 +1,0 @@
-HOW TO BUILD PYTHICS DOCUMENTATION
-==================================
-
-In doc directory, run in at command line (DOS OR UNIX):
-
-make clean
-make html
-make latex
