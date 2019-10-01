@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2008 - 2013 Brian R. D'Urso
+# Copyright 2008 - 2019 Brian R. D'Urso
 #
 # This file is part of Python Instrument Control System, also known as Pythics.
 #
@@ -97,7 +97,7 @@ def read_array(filename, separator=', ', comment='#', dtype='float'):
             stripped_line = line.strip()
             if len(stripped_line) != 0 and stripped_line[0] != comment:
                 items = stripped_line.split(separator)
-                data.append(map(np.cast[dtype], items))
+                data.append(list(map(np.cast[dtype], items)))
         a = np.array(data, dtype=dtype)
     return(a)
 
@@ -128,7 +128,7 @@ class ArrayFile(object):
 
 
 #
-# Circular array for storing and retrieving time series data
+# Circular array for storing and retrieving time series data (use CircularArray for new code)
 #
 class RingBuffer(object):
     def __init__(self, length, width=1, value=0, dtype=np.float64):

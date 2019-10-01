@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2008 - 2014 Brian R. D'Urso
+# Copyright 2008 - 2019 Brian R. D'Urso
 #
 # This file is part of Python Instrument Control System, also known as Pythics.
 #
@@ -22,8 +22,8 @@
 #
 # load libraries
 #
+import traceback
 import types
-import multiprocessing
 
 
 #
@@ -42,13 +42,13 @@ class ProxyMessage(object):
 #
 class ProxyKey(object):
     def __init__(self, key, cache=False):
-        # SPEED UP USING __slots__ ???????????????????????????????????????????
+        # SPEED UP USING __slots__ ?
         self.key = key
         self.cache = cache
 
 
 #
-# use to transfer callback functions from slave to master process
+# use to transfer callback functions from child to parent process
 #
 class FunctionProxy(object):
     def __init__(self, f):
@@ -77,43 +77,49 @@ class ControlProxy(object):
     def _start(self, process):
         self._process = process
         self._process_id = self._process.process_id
-        self._slave_to_master_call_queue = self._process.slave_to_master_call_queue
-        self._slave_to_master_call_return_queue = self._process.slave_to_master_call_return_queue
-        self._slave_to_master_call_queue_semaphore = self._process.slave_to_master_call_queue_semaphore
+        self._child_to_parent_call_queue = self._process.child_to_parent_call_queue
+        self._child_to_parent_call_return_queue = self._process.child_to_parent_call_return_queue
+        self._child_to_parent_call_queue_semaphore = self._process.child_to_parent_call_queue_semaphore
 
     def _call_method(self, f, *args, **kwargs):
         # wait until this process has few enough requests left in the queue
         #  semaphore is released by GUI process once request has executed
-        self._slave_to_master_call_queue_semaphore.acquire()
-        self._slave_to_master_call_queue.put((self._process_id, f, args, kwargs))
-        r = self._slave_to_master_call_return_queue.get()
+        self._child_to_parent_call_queue_semaphore.acquire()
+        self._child_to_parent_call_queue.put((self._process_id, f, args, kwargs))
+        r = self._child_to_parent_call_return_queue.get()
         # check if r is an exception
-        #  if it is and exception, re-raise it in slave process (here)
+        #  if it is and exception, re-raise it in child process (here)
         if type(r) == CrossProcessExceptionProxy:
-            message = "An exception '%s' was raised in the master process." % r.message
+            message = "An exception '%s' was raised in the parent process." % r.message
             raise CrossProcessException(message)
         else:
             return r
 
     def _call_method_no_return(self, f, *args, **kwargs):
         # wait until this process has few enough requests left in the queue
-        #  semaphore is released by master process once request has executed
-        self._slave_to_master_call_queue_semaphore.acquire()
-        self._slave_to_master_call_queue.put((self._process_id, f, args, kwargs))
+        #  semaphore is released by parent process once request has executed
+        self._child_to_parent_call_queue_semaphore.acquire()
+        self._child_to_parent_call_queue.put((self._process_id, f, args, kwargs))
 
     def _get_class(self):
         return None
-
+        
 
 class AutoProxy(ControlProxy):
     def __init__(self, key, enable_cache=False):
         ControlProxy.__init__(self, key)
         self._enable_cache = enable_cache
+        # this tells Pythics not to try to delete the original object later
+        #   this is changed when _start is called
+        self._do_not_delete_original = True
 
     def _start(self, *args, **kwargs):
         ControlProxy._start(self, *args, **kwargs)
         self._start_args = args
         self._start_kwargs = kwargs
+        # store weak reference for cleanup when closing
+        self._process.weak_proxy_refs.add(self)
+        self._do_not_delete_original = False
 
     def __getattr__(self, name):
         if name.startswith('_'):
@@ -138,14 +144,13 @@ class AutoProxy(ControlProxy):
             self._call_method_no_return('set_Proxy_attr',
                                         self._key, name, v)
 
+    def _mark_do_not_delete_original(self):
+        self._do_not_delete_original = True
+
     def __del__(self):
-        # tell master process to delete original object
-        # catch Exceptions since other parts may have already been destroyed
-        try:
+        if not self._do_not_delete_original:
             self._call_method_no_return('delete_Proxy', self._key)
-        except Exception as e:
-            logger = multiprocessing.get_logger()
-            logger.debug('Exception during AutoProxy __del__:' + str(e))
+            self._do_not_delete_original = True
 
     def __call__(self, *args, **kwargs):
         # this is here for AutoProxies of functions
@@ -158,7 +163,7 @@ class AutoProxy(ControlProxy):
         return self._key
 
     def _proxies_to_keys(self, value):
-        # convert proxies to keys to send to master process
+        # convert proxies to keys to send to parent process
         t = type(value)
         if t is AutoProxy:
             # some other type that has to be accessed by proxy
@@ -176,7 +181,7 @@ class AutoProxy(ControlProxy):
             return tuple(r)
         elif t is dict:
             r = dict()
-            for k, v in value.iteritems():
+            for k, v in value.items():
                 r[k] = self._proxies_to_keys(v)
             return r
         elif t is types.FunctionType:
@@ -186,7 +191,7 @@ class AutoProxy(ControlProxy):
             return value
 
     def _keys_to_proxies(self, value):
-        # convert keys from master process to proxies
+        # convert keys from parent process to proxies
         t = type(value)
         if t is ProxyKey:
             # some other type that has to be accessed by proxy
@@ -209,7 +214,7 @@ class AutoProxy(ControlProxy):
         elif t is dict:
             # have to check for ProxyKeys in the dict
             r = dict()
-            for k, v in value.iteritems():
+            for k, v in value.items():
                 r[k] = self._keys_to_proxies(v)
             return r
         else:
@@ -218,7 +223,7 @@ class AutoProxy(ControlProxy):
 
     def __dir__(self):
         c_dir = self._call_method('call_Proxy_method', self._key, '_dir')
-        p_dir = vars(self).keys()
+        p_dir = list(vars(self).keys())
         return c_dir + p_dir
 
     def _get__doc__(self):

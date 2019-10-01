@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2008 - 2014 Brian R. D'Urso
+# Copyright 2008 - 2019 Brian R. D'Urso
 #
 # This file is part of Python Instrument Control System, also known as Pythics.
 #
@@ -26,26 +26,37 @@ import ctypes
 import importlib
 import multiprocessing
 import os.path
-import cStringIO as StringIO
+import io as StringIO
 
-#from PyQt4 import QtCore, QtGui
 from pythics.settings import _TRY_PYSIDE
+
 try:
     if not _TRY_PYSIDE:
         raise ImportError()
-    import PySide.QtCore as _QtCore
-    import PySide.QtGui as _QtGui
+    import PySide2.QtCore as _QtCore
+    import PySide2.QtGui as _QtGui
+    import PySide2.QtWidgets as _QtWidgets
+    import PySide2.QtPrintSupport as _QtPrintSupport
     QtCore = _QtCore
     QtGui = _QtGui
+    QtWidgets = _QtWidgets
+    QtPrintSupport = _QtPrintSupport
+    Signal = QtCore.Signal
+    Slot = QtCore.Slot
+    Property = QtCore.Property
     USES_PYSIDE = True
 except ImportError:
-    import sip
-    sip.setapi('QString', 2)
-    sip.setapi('QVariant', 2)
-    import PyQt4.QtCore as _QtCore
-    import PyQt4.QtGui as _QtGui
+    import PyQt5.QtCore as _QtCore
+    import PyQt5.QtGui as _QtGui
+    import PyQt5.QtWidgets as _QtWidgets
+    import PyQt5.QtPrintSupport as _QtPrintSupport
     QtCore = _QtCore
     QtGui = _QtGui
+    QtWidgets = _QtWidgets
+    QtPrintSupport = _QtPrintSupport
+    Signal = QtCore.pyqtSignal
+    Slot = QtCore.pyqtSlot
+    Property = QtCore.pyqtProperty
     USES_PYSIDE = False
 
 import pythics.html
@@ -56,30 +67,28 @@ import pythics.meter
 
 
 #
-# Import
-#   A control for loading library modules - really just a function
+# Main
+#   Multi-function control for functions wihtout a persistent widget
 #
-def Import(parent, module, *kwargs):
-    return importlib.import_module(module)
-
-
-#
-# ScriptLoader
-#   a dummy control to load a vi's Python code
-#
-class ScriptLoader(pythics.libcontrol.Control):
-    """Imports a Python file for use by the VI process.
+class Main(pythics.libcontrol.Control):
+    """Multi-function control for functions wihtout a persistent widget. This 
+    control is used to import Python file for use by the app process, to load 
+    parameters from a file or save them to a file, and to pop up file, message,
+    and other dialog boxes.
 
     HTML parameters:
 
-      *filename*: str
+      *python_filename*: str
         name of the python file to import with no extension
 
+      *parameters_filename*: str
+        name of the file to load parameters from
+
       *label*: [ str | *None* (default) ]
-        text to show in GUI
+        text to show in GUI or None to show nothing in GUI for this control
 
       *actions*: dict
-        a dictionarly of key:value pairs where the key is the name of a signal
+        a dictionary of key:value pairs where the key is the name of a signal
         and value is the function to run when the signal is emitted
 
         actions in this control:
@@ -87,59 +96,169 @@ class ScriptLoader(pythics.libcontrol.Control):
         ================    ===================================================
         signal              when emitted
         ================    ===================================================
-        'initialized'       script is loaded
-        'terminated'        script is closed
+        'initialized'       python script is loaded
+        'terminated'        python script is closed
         ================    ===================================================
     """
-    def __init__(self, parent, filename='', label=None, **kwargs):
+
+    def __init__(self, parent, python_filename='', parameters_filename='', label=None, **kwargs):
         pythics.libcontrol.Control.__init__(self, parent, **kwargs)
         if label is None or label == '':
             self._widget = None
         else:
-            self._widget = QtGui.QLabel(label)
-        self._filename = filename
-
-    def _register(self, process, element_id, proxy_key):
-        self._element_id = element_id
-        self._process = process
-        self._process.append_module_name(self._filename)
-        if 'initialized' in self.actions:
-            self._process.append_initialization_command(self.actions['initialized'])
-        if 'terminated' in self.actions:
-            self._process.append_termination_command(self.actions['terminated'])
-        self._proxy = None
-
-
-#
-# ParameterLoader
-#   a dummy control to load a vi's default parameters
-#
-class ParameterLoader(pythics.libcontrol.Control):
-    """Loads VI parameters from a file and sets that file as the default.
-
-    HTML parameters:
-
-      *filename*: str
-        name of the file to load the parameters from
-
-      *label*: [ str | *None* (default) ]
-        text to show in GUI
-    """
-    def __init__(self, parent, filename, label=None, **kwargs):
-        pythics.libcontrol.Control.__init__(self, parent, **kwargs)
-        if label is None or label == '':
-            self._widget = None
-        else:
-            self._widget = QtGui.QLabel(label)
-        self._filename = filename
+            self._widget = QtWidgets.QLabel(label)
+        self._python_filename = python_filename
+        self._parameters_filename = parameters_filename
 
     def _register(self, process, element_id, proxy_key):
         self._element_id = element_id
         self._process = process
         self._proxy_key = proxy_key
-        self._proxy = None
-        process.default_parameter_filename = self._filename
+        self._process.append_module_name(self._python_filename)
+        if 'initialized' in self.actions:
+            self._process.append_initialization_command(self.actions['initialized'])
+        if 'terminated' in self.actions:
+            self._process.append_termination_command(self.actions['terminated'])
+        process.default_parameter_filename = self._parameters_filename
         process.load_parameters()
+
+    def import_module(self, module):
+        return importlib.import_module(module)
+
+    #---------------------------------------------------
+    # methods below used only for access by action proxy
+
+    def load_parameters(self, filename=None):
+        """Load parameters from a file. Use default parameter file if filename=None."""
+        self._process.load_parameters(filename)
+
+    def save_parameters(self, filename=None):
+        """Save current parameters to a file. Use default parameter file if filename=None."""
+        self._process.save_parameters(filename)
+
+    def open_input_dialog_int(self, title, message, default_value=0, minimum=-2147483647, maximum=2147483647, step=1):
+        """Open a dialog box for the user to enter an integer value."""
+        ret = QtWidgets.QInputDialog.getInt(self._parent, title, message,
+                                            default_value, minimum, maximum, step)
+        return ret
+
+    def open_input_dialog_double(self, title, message, default_value=0.0, minimum=-3.402823466E+38, maximum=3.402823466E+38, decimals=1):
+        """Open a dialog box for the user to enter a double-precision floating point value."""
+        ret = QtWidgets.QInputDialog.getDouble(self._parent, title, message,
+                                               default_value, minimum, maximum, decimals)
+        return ret
+
+    def open_input_dialog_item(self, title, message, items=[], default_item=0, editable=True):
+        """Open a dialog box for the user to choose one or more items from a list."""
+        ret = QtWidgets.QInputDialog.getItem(self._parent, title, message,
+                                             items, default_item, editable)
+        return ret
+
+    def open_input_dialog_text(self, title, message, default_value=''):
+        """Open a dialog box for the user to enter a string."""
+        ret = QtWidgets.QInputDialog.getText(self._parent, title, message,
+                                             QtWidgets.QLineEdit.Normal, default_value)
+        return ret
+
+    def open_message_dialog(self, title, message, severity,
+                    ok_button=True, cancel_button=False, yes_button=False,
+                    no_button=False, abort_button=False, retry_button=False,
+                    ignore_button=False):
+        """Pops up a message box with a choice of buttons.
+
+        Arguments:
+
+          *title*: str (default 'MessageDialog')
+            string to display as title of message box
+
+          *message*: str (default '')
+            string to display in message box
+
+          *ok_button*: [ *True* | *False* (default) ]
+            whether to include an ok button
+
+          *cancel_button*: [ *True* | *False* (default) ]
+            whether to include a cancel button
+
+          *yes_button*: [ *True* | *False* (default) ]
+            whether to include a yes button
+
+          *no_button*: [ *True* | *False* (default) ]
+            whether to include a no button
+
+          *abort_button*: [ *True* | *False* (default) ]
+            whether to include an abort button
+
+          *retry_button*: [ *True* | *False* (default) ]
+            whether to include a retry button
+
+          *ignore_button*: [ *True* | *False* (default) ]
+            whether to include an ignore button
+
+          *severity*: [ *None* (default), 'question', 'information', 'warning', or 'critical' ]
+            if given, the type of message to show
+
+          *label*: [ str | *None* (default) ]
+            text to show in GUI
+
+        Returns (bool):
+          True on Ok, Yes, Retry, or Ignore; False otherwise
+        """
+        buttons = QtWidgets.QMessageBox.NoButton
+        if ok_button:
+            # An "OK" button defined with the AcceptRole.
+            buttons = buttons | QtWidgets.QMessageBox.Ok
+        if cancel_button:
+            # A "Cancel" button defined with the RejectRole.
+            buttons = buttons | QtWidgets.QMessageBox.Cancel
+        if yes_button:
+            # A "Yes" button defined with the YesRole.
+            buttons = buttons | QtWidgets.QMessageBox.Yes
+        if no_button:
+            # A "No" button defined with the NoRole.
+            buttons = buttons | QtWidgets.QMessageBox.No
+        if abort_button:
+            # An "Abort" button defined with the RejectRole.
+            buttons = buttons | QtWidgets.QMessageBox.Abort
+        if retry_button:
+            # A "Retry" button defined with the AcceptRole.
+            buttons = buttons | QtWidgets.QMessageBox.Retry
+        if ignore_button:
+            # An "Ignore" button defined with the AcceptRole.
+            buttons = buttons | QtWidgets.QMessageBox.Ignore
+        if severity == 'question':
+            ret = QtWidgets.QMessageBox.question(self._parent, title, message, buttons)
+        elif severity == 'information':
+            ret = QtWidgets.QMessageBox.information(self._parent, title, message, buttons)
+        elif severity == 'warning':
+            ret = QtWidgets.QMessageBox.warning(self._parent, title, message, buttons)
+        elif severity == 'critical':
+            ret = QtWidgets.QMessageBox.critical(self._parent, title, message, buttons)
+        else:
+            msg = QtWidgets.QMessageBox(QtWidgets.QMessageBox.NoIcon, title, message, buttons, self._parent)
+            ret = msg.exec_()
+        if ((ret == QtWidgets.QMessageBox.Ok)
+            or (ret == QtWidgets.QMessageBox.Yes)
+            or (ret == QtWidgets.QMessageBox.Retry)
+            or (ret == QtWidgets.QMessageBox.Ignore)):
+            return True
+        else:
+            return False
+
+    def open_file_dialog_open_file(self, title='Choose a File', directory='', filter='*.*'):
+        """Open a dialog box for the user to choose a file to open."""
+        filename = QtWidgets.QFileDialog.getOpenFileName(self._parent, title, directory, filter)[0]
+        return filename
+
+    def open_file_dialog_save_file(self, title='Choose a File', directory='', filter='*.*'):
+        """Open a dialog box for the user to choose a filname for saving."""
+        filename = QtWidgets.QFileDialog.getSaveFileName(self._parent, title, directory, filter)[0]
+        return filename
+
+    def open_file_dialog_directory(self, title='Choose a Directory', directory=''):
+        """Open a dialog box for the user to choose a directory."""
+        filename = QtWidgets.QFileDialog.getExistingDirectory(self._parent, title, directory)
+        return filename
 
 
 #
@@ -148,8 +267,8 @@ class ParameterLoader(pythics.libcontrol.Control):
 #   proxy class is created by multiprocessing manager
 #
 class GlobalNamespace(pythics.libcontrol.Control):
-    """Creates a namespace that is shared between all VIs. GlobalNamespaces in
-    different vi's with the same `id` attribute will share the same namespace.
+    """Creates a namespace that is shared between all apps. GlobalNamespaces in
+    different apps with the same `id` attribute will share the same namespace.
 
     HTML parameters:
 
@@ -161,7 +280,7 @@ class GlobalNamespace(pythics.libcontrol.Control):
         if label is None or label == '':
             self._widget = None
         else:
-            self._widget = QtGui.QLabel(label)
+            self._widget = QtWidgets.QLabel(label)
 
     def _register(self, process, element_id, proxy_key):
         self._element_id = element_id
@@ -175,11 +294,11 @@ class GlobalNamespace(pythics.libcontrol.Control):
 #   any process
 #
 class GlobalAction(pythics.libcontrol.Control):
-    """Holds an action which can triggered by a `GlobalTrigger` control in another VI.
+    """Holds an action which can triggered by a `GlobalTrigger` control in another app.
 
     The `id` parameter is the name of the control and it must match the
     'action_id' of an associated `GlobalTrigger`. The GlobalAction and
-    GlobalTrigger may be in different vi's.
+    GlobalTrigger may be in different apps.
 
     HTML parameters:
 
@@ -187,7 +306,7 @@ class GlobalAction(pythics.libcontrol.Control):
         text to show in GUI
 
       *actions*: dict
-        a dictionarly of key:value pairs where the key is the name of a signal
+        a dictionary of key:value pairs where the key is the name of a signal
         and value is the function to run when the signal is emitted
 
         actions in this control:
@@ -203,7 +322,7 @@ class GlobalAction(pythics.libcontrol.Control):
         if label is None or label == '':
             self._widget = None
         else:
-            self._widget = QtGui.QLabel(label)
+            self._widget = QtWidgets.QLabel(label)
 
     def _register(self, process, element_id, proxy_key):
         self._element_id = element_id
@@ -221,7 +340,7 @@ class GlobalTrigger(pythics.libcontrol.Control):
     """A control to trigger any `GlobalAction` with an `id` that matches the
     'action_id' paramter.
 
-    The GlobalAction and GlobalTrigger may be in different vi's.
+    The GlobalAction and GlobalTrigger may be in different apps.
 
     HTML parameters:
 
@@ -236,7 +355,7 @@ class GlobalTrigger(pythics.libcontrol.Control):
         if label is None or label == '':
             self._widget = None
         else:
-            self._widget = QtGui.QLabel(label)
+            self._widget = QtWidgets.QLabel(label)
         self.action_id = action_id
 
     #---------------------------------------------------
@@ -245,6 +364,54 @@ class GlobalTrigger(pythics.libcontrol.Control):
     def trigger(self):
         """Trigger all GlobalActions with a matching `key`."""
         self._process.trigger_global_action(self.action_id)
+
+
+#
+# Timer
+#
+class Timer(pythics.libcontrol.Control):
+    """A control which makes calls to an action at regular time intervals. Most
+    settings are controlled in a call to `start`, which begins the timer. The
+    timer can be stopped by calling the `stop` method. The timer may be started
+    and stopped multiple times. Due to the mult-threaded nature of Timers, most
+    control properties are read-only and can only be set by calling `start`.
+
+    HTML parameters:
+
+      *label*: [ str | *None* (default) ]
+        text to show in GUI
+
+      *actions*: dict
+        a dictionary of key:value pairs where the key is the name of a signal
+        and value is the function to run when the signal is emitted
+
+        actions in this control:
+
+        ================    ===================================================
+        signal              when emitted
+        ================    ===================================================
+        'triggered'         action is triggered
+        ================    ===================================================
+    """
+    def __init__(self, parent, label=None, **kwargs):
+        pythics.libcontrol.Control.__init__(self, parent, **kwargs)
+        if label is None or label == '':
+            self._widget = None
+        else:
+            self._widget = QtWidgets.QLabel(label)
+
+    def _register(self, process, element_id, proxy_key):
+        self._element_id = element_id
+        self._process = process
+        if 'triggered' in self.actions:
+            action = self.actions['triggered']
+        else:
+            action = None
+        self._proxy = pythics.proxies.TimerProxy(action)
+
+    #-------------------------------------------------------------------
+    # no methods for access by action proxy - all functionality in proxy
+    #-------------------------------------------------------------------
 
 
 #
@@ -265,7 +432,7 @@ class Button(pythics.libcontrol.Control):
         whether the button should hold the pressed state
 
       *actions*: dict
-        a dictionarly of key:value pairs where the key is the name of a signal
+        a dictionary of key:value pairs where the key is the name of a signal
         and value is the function to run when the signal is emitted
 
         actions in this control:
@@ -284,16 +451,14 @@ class Button(pythics.libcontrol.Control):
         pythics.libcontrol.Control.__init__(self, parent, **kwargs)
         self._toggle = toggle
         if self._toggle:
-            self._widget = QtGui.QToolButton()
+            self._widget = QtWidgets.QToolButton()
             self._widget.setToolButtonStyle(QtCore.Qt.ToolButtonTextOnly)
-            self._widget.setSizePolicy(QtGui.QSizePolicy.Minimum,
-                                      QtGui.QSizePolicy.Fixed)
-            h = self._widget.minimumSizeHint().height()
-            self._widget.setMinimumHeight(h+4)
+            self._widget.setSizePolicy(QtWidgets.QSizePolicy.Minimum,
+                                      QtWidgets.QSizePolicy.Fixed)
             self._widget.setText(label)
             self._widget.setCheckable(True)
         else:
-            self._widget = QtGui.QPushButton(label)
+            self._widget = QtWidgets.QPushButton(label)
 
     def _get_parameter(self):
         return self._widget.isChecked()
@@ -313,7 +478,7 @@ class Button(pythics.libcontrol.Control):
 
     label = property(_get_label, _set_label, doc=\
         """Text to be displayed on the button.""")
-        
+
     def _get_value(self):
         return self._widget.isChecked()
 
@@ -344,7 +509,7 @@ class CheckBox(pythics.libcontrol.Control):
         text to display next to the box
 
       *actions*: dict
-        a dictionarly of key:value pairs where the key is the name of a signal
+        a dictionary of key:value pairs where the key is the name of a signal
         and value is the function to run when the signal is emitted
 
         actions in this control:
@@ -361,7 +526,7 @@ class CheckBox(pythics.libcontrol.Control):
     """
     def __init__(self, parent, label='', **kwargs):
         pythics.libcontrol.Control.__init__(self, parent, **kwargs)
-        self._widget = QtGui.QCheckBox(label)
+        self._widget = QtWidgets.QCheckBox(label)
 
     def _get_parameter(self):
         return self._widget.isChecked()
@@ -405,7 +570,7 @@ class ChoiceBox(pythics.libcontrol.Control):
       *style*: [ 'single' (default) | 'multiple' | 'extended' ]
 
       *actions*: dict
-        a dictionarly of key:value pairs where the key is the name of a signal
+        a dictionary of key:value pairs where the key is the name of a signal
         and value is the function to run when the signal is emitted
 
         actions in this control:
@@ -427,13 +592,13 @@ class ChoiceBox(pythics.libcontrol.Control):
     """
     def __init__(self, parent, choices='[]', style='single', **kwargs):
         pythics.libcontrol.Control.__init__(self, parent, **kwargs)
-        self._widget = QtGui.QListWidget()
+        self._widget = QtWidgets.QListWidget()
         if style == 'single':
-            self.style = QtGui.QAbstractItemView.SingleSelection
+            self.style = QtWidgets.QAbstractItemView.SingleSelection
         elif style == 'multiple':
-            self.style = QtGui.QAbstractItemView.MultiSelection
+            self.style = QtWidgets.QAbstractItemView.MultiSelection
         elif style == 'extended':
-            self.style = QtGui.QAbstractItemView.ExtendedSelection
+            self.style = QtWidgets.QAbstractItemView.ExtendedSelection
         else:
             # SHOULD RAISE AN EXCEPTION
             pass
@@ -441,7 +606,7 @@ class ChoiceBox(pythics.libcontrol.Control):
         self._set_choices(choices)
 
     def _get_parameter(self):
-        if self.style == QtGui.QAbstractItemView.SingleSelection:
+        if self.style == QtWidgets.QAbstractItemView.SingleSelection:
             s = self._widget.selectedItems()
             if len(s) > 0:
                 return self._widget.selectedItems()[0].text()
@@ -457,12 +622,12 @@ class ChoiceBox(pythics.libcontrol.Control):
         with self._block_signals():
             self._widget.clearSelection()
             if value is not None:
-                if self.style == QtGui.QAbstractItemView.SingleSelection:
+                if self.style == QtWidgets.QAbstractItemView.SingleSelection:
                     i = self._choices.index(value)
                     j = self._widget.item(i)
                     self._widget.setCurrentItem(j)
                 else:
-                    for i in xrange(len(self.choices)):
+                    for i in range(len(self.choices)):
                         if value.count(self.choices[i]) > 0:
                             j = self._widget.item(i)
                             self._widget.setCurrentItem(j)
@@ -476,9 +641,11 @@ class ChoiceBox(pythics.libcontrol.Control):
     def _set_value(self, value):
         self._set_parameter(value)
 
-    value = property(_get_value, _set_value)
+    value = property(_get_value, _set_value, doc=\
+        """the user's choice or choices""")
 
     def set_first_visible_item(self, value):
+        """Move the scroll bar to set the first visible choice."""
         self._widget.SetFirstItem(value)
 
     def _get_choices(self):
@@ -491,7 +658,8 @@ class ChoiceBox(pythics.libcontrol.Control):
         for c in self._choices:
             self._widget.insertItem(max_n, c)
 
-    choices = property(_get_choices, _set_choices)
+    choices = property(_get_choices, _set_choices, doc=\
+        """the list of items to choose from""")
 
 
 #
@@ -509,7 +677,7 @@ class ChoiceButton(pythics.libcontrol.Control):
         the list of items to choose from
 
       *actions*: dict
-        a dictionarly of key:value pairs where the key is the name of a signal
+        a dictionary of key:value pairs where the key is the name of a signal
         and value is the function to run when the signal is emitted
 
         actions in this control:
@@ -525,7 +693,7 @@ class ChoiceButton(pythics.libcontrol.Control):
     """
     def __init__(self, parent, choices=[], **kwargs):
         pythics.libcontrol.Control.__init__(self, parent, **kwargs)
-        self._widget = QtGui.QComboBox()
+        self._widget = QtWidgets.QComboBox()
         self._set_choices(choices)
 
     def _get_parameter(self):
@@ -545,7 +713,8 @@ class ChoiceButton(pythics.libcontrol.Control):
     def _set_value(self, value):
         self._set_parameter(value)
 
-    value = property(_get_value, _set_value)
+    value = property(_get_value, _set_value, doc=\
+        """the user's choice or choices""")
 
     def _get_choices(self):
         return self._widget.choices
@@ -557,14 +726,33 @@ class ChoiceButton(pythics.libcontrol.Control):
         for c in self._choices:
             self._widget.insertItem(max_n, c)
 
-    choices = property(_get_choices, _set_choices)
+    choices = property(_get_choices, _set_choices, doc=\
+        """the list of items to choose from""")
 
 
 #
 # EventButton
 #
 class EventButton(pythics.libcontrol.Control):
-    """A push or toggle button which can trigger an action.
+    """A push or toggle button which can trigger an action and communicate with
+    your process through a multiprocessing.Event object. 
+    
+    EventButtons have two particularly useful features: 
+    
+    First, using the start_interval wait_interval methods, you can make a loop 
+    repeat with a set repetition time, automatically taking account for the 
+    time your code takes to run (if you just want a fixed delay, use wait()). 
+    wait() and wait_interval() are interrupted if the Event is set, so long 
+    waits will end immediately if signaled by the EventButton. 
+    
+    Second, when used as a stop or start/stop button, your code can check 
+    whether stop has been requested using the is_set method, which is much 
+    faster than sending a normal command to or from the GUI. This could also be
+    useful if you need a button to request some kind of slow GUI update in an
+    otherwise fast loop.
+    
+    Note that while waiting (with wait or wait_interval), no other code in your 
+    process will run and new GUI actions will not be processed.
 
     HTML parameters:
 
@@ -578,7 +766,7 @@ class EventButton(pythics.libcontrol.Control):
         whether the button should hold the pressed state
 
       *actions*: dict
-        a dictionarly of key:value pairs where the key is the name of a signal
+        a dictionary of key:value pairs where the key is the name of a signal
         and value is the function to run when the signal is emitted
 
         actions in this control:
@@ -589,11 +777,21 @@ class EventButton(pythics.libcontrol.Control):
         'clicked'           button is clicked
         'pressed'           button is pressed
         'released'          button is released
+        'run'               change from unpressed to pressed (only if toggle=True)
         ================    ===================================================
     """
-    def __init__(self, parent, label='', **kwargs):
+    def __init__(self, parent, label='', toggle=False, **kwargs):
         pythics.libcontrol.Control.__init__(self, parent, **kwargs)
-        self._widget = QtGui.QPushButton(label)
+        self._toggle = toggle
+        if self._toggle:
+            self._widget = QtWidgets.QToolButton()
+            self._widget.setToolButtonStyle(QtCore.Qt.ToolButtonTextOnly)
+            self._widget.setSizePolicy(QtWidgets.QSizePolicy.Minimum,
+                                      QtWidgets.QSizePolicy.Fixed)
+            self._widget.setText(label)
+            self._widget.setCheckable(True)
+        else:
+            self._widget = QtWidgets.QPushButton(label)
 
     def _register(self, process, element_id, proxy_key):
         self._element_id = element_id
@@ -604,8 +802,23 @@ class EventButton(pythics.libcontrol.Control):
         self._proxy = pythics.proxies.EventButtonProxy(self._event, proxy_key)
 
     def _on_click(self, *args, **kwargs):
-        self._event.set()
-        self._exec_action('clicked')
+        if self._toggle:
+            if self._widget.isChecked():
+                self._event.clear()
+                self._exec_action('run')
+            else:
+                self._event.set()
+                self._exec_action('clicked')
+        else:
+            self._event.set()
+            self._exec_action('clicked')
+
+    def _get_parameter(self):
+        return self._widget.isChecked()
+
+    def _set_parameter(self, value):
+        with self._block_signals():
+            self._widget.setChecked(value)
 
     #---------------------------------------
     # methods below used for access by proxy
@@ -619,62 +832,19 @@ class EventButton(pythics.libcontrol.Control):
     label = property(_get_label, _set_label, doc=\
         """Text to be displayed on the button.""")
 
+    def _get_value(self):
+        return self._widget.isChecked()
 
-#
-# FileDialog
-#
-class FileDialog(pythics.libcontrol.Control):
-    """Pops up a save file, open file, or choose directory box.
-    HTML parameters:
+    def _set_value(self, value):
+        with self._block_signals():
+            self._widget.setChecked(value)
 
-      *title*: str (default 'Choose a File')
+    value = property(_get_value, _set_value, doc=\
+        """The state of the Button, if toggle=True.
 
-      *directory*: str
-        starting base directory
-
-      *filter*: str (default '\*.\*')
-        filter for displayed file names
-
-      *label*: [ str | *None* (default) ]
-        text to show in GUI
-    """
-    def __init__(self, parent, title='Choose a File', directory='', filter='*.*',
-                 label=None, **kwargs):
-        pythics.libcontrol.Control.__init__(self, parent, **kwargs)
-        if label == None:
-            static_string = 'FileDialog'
-        elif label == '':
-            static_string = None
-        else:
-            static_string = label
-        if static_string is not None:
-            self._widget = QtGui.QLabel(static_string)
-        else:
-            self._widget = None
-        self.title = title
-        self.directory = directory
-        self.filter = filter
-
-    #---------------------------------------------------
-    # methods below used only for access by action proxy
-
-    def get_open(self):
-        filename = QtGui.QFileDialog.getOpenFileName(self._parent, self.title,
-                        self.directory, self.filter)
-        if USES_PYSIDE:
-            # PySide returns a tuple instead of just a string
-            filename = filename[0]
-        return filename
-
-    def get_save(self):
-        filename = QtGui.QFileDialog.getSaveFileName(self._parent, self.title,
-                    self.directory, self.filter)
-        return filename
-
-    def get_directory(self):
-        filename = QtGui.QFileDialog.getExistingDirectory(self._parent,
-                    self.title, self.directory, QtGui.QFileDialog.ShowDirsOnly)
-        return filename
+        If *value* is True, the EventButton is pressed. If *value* is False, 
+        the EventButton is not pressed.
+        """)
 
 
 #
@@ -700,10 +870,10 @@ class FilePicker(pythics.libcontrol.Control):
       *filter*: str (default '\*.\*')
         filter for displayed file names
 
-      *type*: [ 'open' | 'save' (default) | 'directory' ]
+      *dialog_type*: [ 'open_file' | 'save_file' (default) | 'directory' ]
 
       *actions*: dict
-        a dictionarly of key:value pairs where the key is the name of a signal
+        a dictionary of key:value pairs where the key is the name of a signal
         and value is the function to run when the signal is emitted
 
         actions in this control:
@@ -715,17 +885,17 @@ class FilePicker(pythics.libcontrol.Control):
         ================    ===================================================
     """
     def __init__(self, parent, label='File', title='Choose', directory='',
-                 filter='*.*', type='save', **kwargs):
+                 filter='*.*', dialog_type='save', **kwargs):
         pythics.libcontrol.Control.__init__(self, parent, **kwargs)
-        self._widget = QtGui.QGroupBox(label)
-        self.type = type
+        self._widget = QtWidgets.QGroupBox(label)
+        self.type = dialog_type
         self.title = title
         self.directory = directory
         self.filter = filter
-        hbox = QtGui.QHBoxLayout()
-        self._text_box = QtGui.QTextEdit()
+        hbox = QtWidgets.QHBoxLayout()
+        self._text_box = QtWidgets.QTextEdit()
         hbox.addWidget(self._text_box)
-        self._button = QtGui.QPushButton('Browse')
+        self._button = QtWidgets.QPushButton('Browse')
         hbox.addWidget(self._button)
         self._widget.setLayout(hbox)
         # set default height
@@ -755,21 +925,20 @@ class FilePicker(pythics.libcontrol.Control):
     def _set_value(self, value):
         self._set_parameter(value)
 
-    value = property(_get_value, _set_value)
+    value = property(_get_value, _set_value, doc=\
+        """the user's choice of filename or directory""")
 
     def browse(self):
-        if self.type == 'open':
-            filename = QtGui.QFileDialog.getOpenFileName(self._parent,
-                self.title, self.directory, self.filter)
-            if USES_PYSIDE:
-                # PySide returns a tuple instead of just a string
-                filename = filename[0]
+        """Open the file dialog box."""
+        if self.type == 'open_file':
+            filename = QtWidgets.QFileDialog.getOpenFileName(self._parent, self.title,
+                                             self.directory, self.filter)[0]
         elif self.type == 'directory':
-            filename = QtGui.QFileDialog.getExistingDirectory(self._parent,
-                self.title, self.directory, QtGui.QFileDialog.ShowDirsOnly)
+            filename = QtWidgets.QFileDialog.getExistingDirectory(self._parent,
+                self.title, self.directory, QtWidgets.QFileDialog.ShowDirsOnly)
         else:
-            filename = QtGui.QFileDialog.getSaveFileName(self._parent,
-                self.title, self.directory, self.filter)
+            filename = QtWidgets.QFileDialog.getSaveFileName(self._parent, self.title,
+                                             self.directory, self.filter)[0]
         filename = filename
         self._text_box.setPlainText(filename)
         return filename
@@ -797,7 +966,7 @@ class Image(pythics.libcontrol.Control):
         specify maximum image size, requred if 'use_shared_memory' is *True*
 
       *actions*: dict
-        a dictionarly of key:value pairs where the key is the name of a signal
+        a dictionary of key:value pairs where the key is the name of a signal
         and value is the function to run when the signal is emitted
 
         actions in this control:
@@ -830,7 +999,7 @@ class Image(pythics.libcontrol.Control):
         self._image_label.setBackgroundRole(QtGui.QPalette.Dark)
         self._image_label.setFit(self._fit)
         self._image_label.setScale(self._scale)
-        self._widget = QtGui.QScrollArea()
+        self._widget = QtWidgets.QScrollArea()
         self._widget.setBackgroundRole(QtGui.QPalette.Dark)
         self._widget.setAlignment(QtCore.Qt.AlignHCenter|QtCore.Qt.AlignVCenter)
         self._widget.setWidget(self._image_label)
@@ -841,6 +1010,8 @@ class Image(pythics.libcontrol.Control):
         self.right_release_position = None
         self.left_double_click_position = None
         self.right_double_click_position = None
+        # color table for greyscale indexed images
+        self.greyscale_color_table = [QtGui.qRgb(i, i, i) for i in range(256)]
 
     def _adjust_scroll_bar(scroll_bar, factor):
         scroll_bar.setValue(int(factor * scroll_bar.value()
@@ -918,7 +1089,8 @@ class Image(pythics.libcontrol.Control):
     def _get_fit(self):
         return self._fit
 
-    fit = property(_get_fit, _set_fit)
+    fit = property(_get_fit, _set_fit, doc=\
+        """Whether to resize the image to fit in the widget.""")
 
     def _set_scale(self, scale):
         self._image_label.setFit(False)
@@ -930,33 +1102,66 @@ class Image(pythics.libcontrol.Control):
     def _get_scale(self):
         return self._scale
 
-    scale = property(_get_scale, _set_scale)
+    scale = property(_get_scale, _set_scale, doc=\
+        """A floating point value specifying the scaling of the image""")
 
     #--------------------------------------------------------------------
     # used only for access by action proxy with 'use_shared_memory=False'
 
-    def _get_image(self):
-        return self.image_data, self._image_size
+#    def _get_image(self):
+#        return self.image_data, self._image_size
+#
+#    def _set_image(self, data, size):
+#        self.image_data = data
+#        self._image_size = size
+#        w, h = size
+#        self.image = QtGui.QImage(data, w, h, QtGui.QImage.Format_ARGB32)
+#        self._display_image()
 
-    def _set_image(self, data, size):
+    def _display(self, mode, size, data):
         self.image_data = data
         self._image_size = size
         w, h = size
-        self.image = QtGui.QImage(data, w, h, QtGui.QImage.Format_ARGB32)
+        if mode == 'L':
+            self.image = QtGui.QImage(data, w, h, w, QtGui.QImage.Format_Indexed8)
+            self.image.setColorTable(self.greyscale_color_table)
+        elif mode == 'RGB':
+            self.image = QtGui.QImage(data, w, h, 3*w, QtGui.QImage.Format_RGB888)
+        elif mode == 'ARGB':
+            self.image = QtGui.QImage(data, w, h, 4*w, QtGui.QImage.Format_ARGB32)
         self._display_image()
 
     #-------------------------------------------------------------------
     # used only for access by action proxy with 'use_shared_memory=True'
 
-    def _get_image_with_shared(self):
-        return self._image_size
+#    def _get_image_with_shared(self):
+#        return self._image_size
+#
+#    def _set_image_with_shared(self, size):
+#        w, h = size
+#        self._image_size = size
+#        self.shared_image_data_subset = self.shared_image_data.raw[0:(4*w*h)]
+#        self.image = QtGui.QImage(self.shared_image_data_subset,
+#                                    w, h, QtGui.QImage.Format_ARGB32)
+#        self._display_image()
 
-    def _set_image_with_shared(self, size):
+    def _display_shared(self, mode, size):
         w, h = size
         self._image_size = size
-        self.shared_image_data_subset = self.shared_image_data.raw[0:(4*w*h)]
-        self.image = QtGui.QImage(self.shared_image_data_subset,
-                                    w, h, QtGui.QImage.Format_ARGB32)
+
+        if mode == 'L':
+            self.shared_image_data_subset = self.shared_image_data.raw[0:(w*h)]
+            self.image = QtGui.QImage(self.shared_image_data_subset,
+                                      w, h, w, QtGui.QImage.Format_Indexed8)
+            self.image.setColorTable(self.greyscale_color_table)
+        elif mode == 'RGB':
+            self.shared_image_data_subset = self.shared_image_data.raw[0:(3*w*h)]
+            self.image = QtGui.QImage(self.shared_image_data_subset,
+                                      w, h, 3*w, QtGui.QImage.Format_RGB888)
+        elif mode == 'ARGB':
+            self.shared_image_data_subset = self.shared_image_data.raw[0:(4*w*h)]
+            self.image = QtGui.QImage(self.shared_image_data_subset,
+                                      w, h, 4*w, QtGui.QImage.Format_ARGB32)
         self._display_image()
 
 
@@ -980,7 +1185,7 @@ class ImageButton(pythics.libcontrol.Control):
         name of image file to display on button when pressed
 
       *actions*: dict
-        a dictionarly of key:value pairs where the key is the name of a signal
+        a dictionary of key:value pairs where the key is the name of a signal
         and value is the function to run when the signal is emitted
 
         actions in this control:
@@ -997,7 +1202,7 @@ class ImageButton(pythics.libcontrol.Control):
     def __init__(self, parent, toggle=False, image_filename=None,
                  pressed_image_filename=None, **kwargs):
         pythics.libcontrol.Control.__init__(self, parent, **kwargs)
-        self._widget = QtGui.QToolButton()
+        self._widget = QtWidgets.QToolButton()
         self._widget.setToolButtonStyle(QtCore.Qt.ToolButtonIconOnly)
         if image_filename is not None:
             if not os.path.isfile(image_filename):
@@ -1053,95 +1258,19 @@ class ImageButton(pythics.libcontrol.Control):
             else:
                 self._widget.setIcon(self._icon)
 
-    value = property(_get_value, _set_value)
+    value = property(_get_value, _set_value, doc=\
+        """The state of the ImageButton, if toggle=True.
 
-
-#
-# InputDialog
-#
-class InputDialog(pythics.libcontrol.Control):
-    """Pops up a dialog box to prompt for input.
-
-    HTML parameters:
-
-      *title*: str (default 'MessageDialog')
-        string to display as title of message box
-
-      *message*: str (default '')
-        string to display in message box
-
-      *input_type*: [ str (default) | int | float | list ]
-        text to show in GUI
-
-      *label*: [ str | *None* (default) ]
-        text to show in GUI
-    """
-    def __init__(self, parent, title='MessageDialog', input_type=str,  message='',
-                 label=None, **kwargs):
-        pythics.libcontrol.Control.__init__(self, parent, **kwargs)
-        if label == None or label == '':
-            self._widget = None
-        else:
-            self._widget = QtGui.QLabel(label)
-        self.title = title
-        self.message = message
-        self.input_type = input_type
-        self.int_default_value = 0
-        self.int_min = -2147483647
-        self.int_max = 2147483647
-        self.int_step = 1
-        self.float_default_value = 0.0
-        self.float_min = -2147483647.0
-        self.float_max = 2147483647.0
-        self.float_decimals = 1
-        self.list_items = []
-        self.list_default_item = 0
-        self.list_editable = True
-        self.str_default_value = ''
-
-    #---------------------------------------------------
-    # methods below used only for access by action proxy
-
-    # input_type, message, title, other attributes are accessible
-
-    def open(self):
-        if self.input_type == int:
-            ret = QtGui.QInputDialog.getInt(self._parent, self.title,
-                                             self.message,
-                                             self.int_default_value,
-                                             self.int_min,
-                                             self.int_max,
-                                             self.int_step)
-            return ret
-        elif self.input_type == float:
-            ret = QtGui.QInputDialog.getDouble(self._parent, self.title,
-                                             self.message,
-                                             self.float_default_value,
-                                             self.float_min,
-                                             self.float_max,
-                                             self.float_decimals)
-            return ret
-        elif self.input_type == list:
-            ret = QtGui.QInputDialog.getItem(self._parent, self.title,
-                                             self.message,
-                                             self.list_items,
-                                             self.list_default_item,
-                                             self.list_editable)
-            return (str(ret[0]), ret[1])
-        else: # self.input_type == str:
-            ret = QtGui.QInputDialog.getText(self._parent, self.title,
-                                             self.message,
-                                             QtGui.QLineEdit.Normal,
-                                             self.str_default_value)
-            # convert QString into a python string
-            return (str(ret[0]), ret[1])
+        If *value* is True, the ImageButton is pressed. If *value* is False, the
+        ImageButton is not pressed.
+        """)
 
 
 #
 # Knob
 #
 class Knob(pythics.libcontrol.Control):
-    """A multiturn dial that can be rotated to select one value out of a list 
+    """A multiturn dial that can be rotated to select one value out of a list
     of values.
 
     HTML parameters:
@@ -1151,10 +1280,10 @@ class Knob(pythics.libcontrol.Control):
 
       *choices*: list
         the list of items to choose from
-        
+
       *steps*: in (default 50)
         how many steps per turn of the dial
-        
+
       *acceleration*: float (default 5.0)
         controls how much to accelerate value if know is turned quickly, set to
         0 to disable acceleration
@@ -1163,10 +1292,16 @@ class Knob(pythics.libcontrol.Control):
         whether to emit many 'choiceChanged' events as the knob is dragged
 
       *wrapping*: [ *True* | *False* (default) ]
-        whether to emit many 'valueChanged' events as the scrollbar is dragged
+        whether the values start over after one revolution
+
+      *prefix*: str (default '')
+        string to display on the knob before the value
+
+      *suffix*: str (default '')
+        string to display on the knob after the value
 
       *actions*: dict
-        a dictionarly of key:value pairs where the key is the name of a signal
+        a dictionary of key:value pairs where the key is the name of a signal
         and value is the function to run when the signal is emitted
 
         actions in this control:
@@ -1174,22 +1309,24 @@ class Knob(pythics.libcontrol.Control):
         ================    ===================================================
         signal              when emitted
         ================    ===================================================
-        'choiceChanged'      the value has changed, 
-                              tracking determines whether this signal is 
+        'choiceChanged'      the value has changed,
+                              tracking determines whether this signal is
                               emitted during user interaction
         'sliderPressed'     the user starts to drag the knob
         'sliderMoved'       the user drags the knob
         'sliderReleased'    the user releases the knob.
         ================    ===================================================
     """
-    def __init__(self, parent, choices=['None'], steps=50, acceleration=5.0, 
-                 tracking=False, wrapping=False, **kwargs):
+    def __init__(self, parent, choices=['None'], steps=50, acceleration=5.0,
+                 tracking=False, wrapping=False, prefix='', suffix='', **kwargs):
         pythics.libcontrol.Control.__init__(self, parent, **kwargs)
-        self._widget = pythics.control_helpers.Knob(choices=list(choices), 
-                                                    steps=steps, 
+        self._widget = pythics.control_helpers.Knob(choices=list(choices),
+                                                    steps=steps,
                                                     acceleration=acceleration,
                                                     tracking=tracking,
-                                                    wrapping=wrapping)
+                                                    wrapping=wrapping,
+                                                    prefix=prefix,
+                                                    suffix=suffix)
 
     def _get_parameter(self):
         return self._widget.getChoiceValue()
@@ -1212,6 +1349,30 @@ class Knob(pythics.libcontrol.Control):
         """The list of items to choose from.
         """)
 
+    def _get_prefix(self):
+        return self._widget.prefix
+
+    def _set_prefix(self, value):
+        with self._block_signals():
+            self._widget.prefix = value
+            self._widget.update()
+
+    prefix = property(_get_prefix, _set_prefix, doc=\
+        """The prefix diplayed on the knob.
+        """)
+
+    def _get_suffix(self):
+        return self._widget.suffix
+
+    def _set_suffix(self, value):
+        with self._block_signals():
+            self._widget.suffix = value
+            self._widget.update()
+
+    suffix = property(_get_suffix, _set_suffix, doc=\
+        """The suffix diplayed on the knob.
+        """)
+
     def _get_value(self):
         return self._widget.getChoiceValue()
 
@@ -1222,115 +1383,6 @@ class Knob(pythics.libcontrol.Control):
     value = property(_get_value, _set_value, doc=\
         """The current value selected on the knob.
         """)
-        
-        
-#
-# MessageDialog
-#
-class MessageDialog(pythics.libcontrol.Control):
-    """Pops up a message box with a choice of buttons.
-
-    HTML parameters:
-
-      *title*: str (default 'MessageDialog')
-        string to display as title of message box
-
-      *message*: str (default '')
-        string to display in message box
-
-      *ok_button*: [ *True* | *False* (default) ]
-        whether to include an ok button
-
-      *cancel_button*: [ *True* | *False* (default) ]
-        whether to include a cancel button
-
-      *yes_button*: [ *True* | *False* (default) ]
-        whether to include a yes button
-
-      *no_button*: [ *True* | *False* (default) ]
-        whether to include a no button
-
-      *abort_button*: [ *True* | *False* (default) ]
-        whether to include an abort button
-
-      *retry_button*: [ *True* | *False* (default) ]
-        whether to include a retry button
-
-      *ignore_button*: [ *True* | *False* (default) ]
-        whether to include an ignore button
-
-      *severity*: [ *None* (default), 'question', 'information', 'warning', or 'critical' ]
-        if given, the type of message to show
-
-      *label*: [ str | *None* (default) ]
-        text to show in GUI
-    """
-    def __init__(self, parent, title='MessageDialog', message='',
-                    ok_button=False, cancel_button=False,
-                    yes_button=False, no_button=False,
-                    abort_button=False, retry_button=False, ignore_button=False,
-                    severity=None, label=None,
-                    **kwargs):
-        pythics.libcontrol.Control.__init__(self, parent, **kwargs)
-        if label == None or label == '':
-            self._widget = None
-        else:
-            self._widget = QtGui.QLabel(label)
-        self.title = title
-        self.message = message
-        self.severity = severity
-        self._buttons = QtGui.QMessageBox.NoButton
-        if ok_button:
-            # An "OK" button defined with the AcceptRole.
-            self._buttons = self._buttons | QtGui.QMessageBox.Ok
-        if cancel_button:
-            # A "Cancel" button defined with the RejectRole.
-            self._buttons = self._buttons | QtGui.QMessageBox.Cancel
-        if yes_button:
-            # A "Yes" button defined with the YesRole.
-            self._buttons = self._buttons | QtGui.QMessageBox.Yes
-        if no_button:
-            # A "No" button defined with the NoRole.
-            self._buttons = self._buttons | QtGui.QMessageBox.No
-        if abort_button:
-            # An "Abort" button defined with the RejectRole.
-            self._buttons = self._buttons | QtGui.QMessageBox.Abort
-        if retry_button:
-            # A "Retry" button defined with the AcceptRole.
-            self._buttons = self._buttons | QtGui.QMessageBox.Retry
-        if ignore_button:
-            # An "Ignore" button defined with the AcceptRole.
-            self._buttons = self._buttons | QtGui.QMessageBox.Ignore
-
-    #---------------------------------------------------
-    # methods below used only for access by action proxy
-
-    # message and severity attributes are accessible
-
-    def open(self):
-        if self.severity == 'question':
-            ret = QtGui.QMessageBox.question(self._parent, self.title,
-                                        self.message, self._buttons)
-        elif self.severity == 'information':
-            ret = QtGui.QMessageBox.information(self._parent, self.title,
-                                        self.message, self._buttons)
-        elif self.severity == 'warning':
-            ret = QtGui.QMessageBox.warning(self._parent, self.title,
-                                        self.message, self._buttons)
-        elif self.severity == 'critical':
-            ret = QtGui.QMessageBox.critical(self._parent, self.title,
-                                        self.message, self._buttons)
-        else:
-            msg = QtGui.QMessageBox(QtGui.QMessageBox.NoIcon, self.title,
-                                        self.message, self._buttons, self._parent)
-            ret = msg.exec_()
-        if ((ret == QtGui.QMessageBox.Ok)
-            or (ret == QtGui.QMessageBox.Yes)
-            or (ret == QtGui.QMessageBox.Retry)
-            or (ret == QtGui.QMessageBox.Ignore)):
-            return True
-        else:
-            return False
 
 
 #
@@ -1349,13 +1401,22 @@ class Meter(pythics.libcontrol.Control):
 
       *maximum*: [ int | float ] (default *100*)
         maximim scale value
+
+      *fmt*: [ str ] (default *f*)
+        format specifier for labels
+
+      *precision*: [ int ] (default *0*)
+        nunber of digits in labels after the decimal point
     """
-    def __init__(self, parent, minimum=0.0, maximum=100.0, **kwargs):
+    def __init__(self, parent, minimum=0.0, maximum=100.0, fmt='f', precision=0, **kwargs):
         pythics.libcontrol.Control.__init__(self, parent, **kwargs)
         self._widget = pythics.meter.QMeter()
         self._minimum = minimum
         self._maximum = maximum
         self._widget.setRange(minimum, maximum)
+        self._fmt = fmt
+        self._precision = precision
+        self._widget.setLabelsFormat(fmt, precision)
 
     def _get_parameter(self):
         return self._widget.value()
@@ -1379,7 +1440,6 @@ class Meter(pythics.libcontrol.Control):
         """The minimum scale value displayed.
         """)
 
-
     def _get_maximum(self):
         return self._maximum
 
@@ -1392,6 +1452,18 @@ class Meter(pythics.libcontrol.Control):
         """The maximum scale value displayed.
         """)
 
+    def _get_precision(self):
+        return self._precision
+
+    def _set_precision(self, value):
+        self._precision = value
+        with self._block_signals():
+            self._widget.setLabelsFormat(self._fmt, self._precision)
+
+    precision = property(_get_precision, _set_precision, doc=\
+        """The nunber of digits in labels after the decimal point.
+        """)
+
     def _get_value(self):
         return self._widget.value()
 
@@ -1402,6 +1474,125 @@ class Meter(pythics.libcontrol.Control):
     value = property(_get_value, _set_value, doc=\
         """The value indicated by the needle on the meter.
         """)
+
+
+#
+# MetricNumBox
+#
+class MetricNumBox(pythics.libcontrol.Control):
+    """A box for entering and displaying floating point values with metric units.
+
+    HTML parameters:
+
+      *save*: [ *True* (default) | *False* ]
+        whether to save the value as a default
+
+      *read_only*: [ *True* | *False* (default) ]
+        if *True*, number cannot be edited by user
+
+      *align*: [ 'left' (default) | 'center' | 'right' ]
+        justfication of displayed value
+
+      *increment*: [ int | float ] (default 1)
+        how much to change the value by when an up or down button is pushed
+
+      *format_str*: str (default '%g')
+        printf style format string used to format number if 'notation' is 'scientific'
+
+      *font_size*: int (default None)
+        font size to use for numeric display, use system default if not given
+
+      *maximum*: [ int | float ] (default *None*)
+        maximim allowed value, if given
+
+      *minimum*: [ int | float ] (default *None*)
+        minimum allowed value, if given
+
+      *prefix*: str (default '')
+        text to show before the value, e.g. '$'
+
+      *base_unit*: str (default '')
+        base unit to be shown after the value; the metric prefix will be added
+
+      *metric_prefix:: str (default '')
+        the default metric prefix
+
+      *actions*: dict
+        a dictionary of key:value pairs where the key is the name of a signal
+        and value is the function to run when the signal is emitted
+
+        actions in this control:
+
+        ================    ===================================================
+        signal              when emitted
+        ================    ===================================================
+        'valueChanged'      value is changed
+        ================    ===================================================
+    """
+    def __init__(self, parent,
+                 read_only = False, align='left',
+                 increment=1, digits=1,
+                 notation='decimal', format_str='%g',
+                 maximum=None, minimum=None,
+                 prefix='', base_unit='', metric_prefix='', font_size=None,
+                 **kwargs):
+        pythics.libcontrol.Control.__init__(self, parent, **kwargs)
+        self._digits = digits
+        self._notation = notation
+        self._format_str = format_str
+        self._widget = pythics.control_helpers.MetricDoubleSpinBox(format_str=self._format_str, base_unit=base_unit, metric_prefix=metric_prefix)
+        self._widget.setKeyboardTracking(False)
+        # set to maximum precision, otherwise values get rounded
+        self._widget.setDecimals(323)
+        self._widget.setSingleStep(increment)
+        if minimum is not None:
+            self._widget.setMinimum(minimum)
+        else:
+            # MetricDoubleSpinBox needs a minimum, so make it large
+            self._widget.setMinimum(-1e300)
+        if maximum is not None:
+            self._widget.setMaximum(maximum)
+        else:
+            # MetricDoubleSpinBox needs a maximum, so make it large
+            self._widget.setMaximum(1e300)
+        if read_only:
+            self._widget.setReadOnly(True)
+            self._widget.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
+        if align == 'right':
+            self._alignment = QtCore.Qt.AlignRight
+        elif align == 'center':
+            self._alignment = QtCore.Qt.AlignHCenter
+        else:
+            self._alignment = QtCore.Qt.AlignLeft
+        self._widget.setAlignment(self._alignment)
+        self._widget.setPrefix(prefix)
+        # set default height to approximately 1 line of text
+        metrics = self._widget.fontMetrics()
+        self._widget.setFixedHeight(1.8*metrics.lineSpacing())
+        if font_size is not None:
+            f = self._widget.font()
+            f.setPointSize(font_size)
+            self._widget.setFont(f)
+
+    def _get_parameter(self):
+        return float(self._widget.value())
+
+    def _set_parameter(self, value):
+        with self._block_signals():
+            self._widget.setValue(value)
+
+    #---------------------------------------------------
+    # methods below used only for access by action proxy
+
+    def _get_value(self):
+        return self._get_parameter()
+
+    def _set_value(self, value):
+        self._set_parameter(value)
+
+    value = property(_get_value, _set_value, doc=\
+        """The numerical value entered in the base unit.""")
+
 
 
 #
@@ -1447,10 +1638,10 @@ class NumBox(pythics.libcontrol.Control):
         text to show before the value, e.g. '$'
 
       *suffix*: str (default '')
-        text to shwo after the value, e.g. a unit
+        text to show after the value, e.g. a unit
 
       *actions*: dict
-        a dictionarly of key:value pairs where the key is the name of a signal
+        a dictionary of key:value pairs where the key is the name of a signal
         and value is the function to run when the signal is emitted
 
         actions in this control:
@@ -1490,7 +1681,8 @@ class NumBox(pythics.libcontrol.Control):
                     self._widget.setMaximum(1e300)
         else:
             if self._digits == 0:
-                self._widget = QtGui.QSpinBox()
+                self._widget = QtWidgets.QSpinBox()
+                self._widget.setKeyboardTracking(False)
                 self._widget.setSingleStep(increment)
                 if minimum is not None:
                     self._widget.setMinimum(minimum)
@@ -1503,7 +1695,7 @@ class NumBox(pythics.libcontrol.Control):
                     # QSpinBox needs a maximum, so make it large
                     self._widget.setMaximum(99999999)
             else:
-                self._widget = QtGui.QDoubleSpinBox()
+                self._widget = QtWidgets.QDoubleSpinBox()
                 self._widget.setKeyboardTracking(False)
                 self._widget.setDecimals(digits)
                 self._widget.setSingleStep(increment)
@@ -1519,6 +1711,7 @@ class NumBox(pythics.libcontrol.Control):
                     self._widget.setMaximum(99999999)
         if read_only:
             self._widget.setReadOnly(True)
+            self._widget.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
         if align == 'right':
             self._alignment = QtCore.Qt.AlignRight
         elif align == 'center':
@@ -1535,10 +1728,10 @@ class NumBox(pythics.libcontrol.Control):
             f = self._widget.font()
             f.setPointSize(font_size)
             self._widget.setFont(f)
-        
+
     def _get_parameter(self):
         if self._digits == 0:
-            return long(self._widget.value())
+            return int(self._widget.value())
         else:
             return float(self._widget.value())
 
@@ -1555,7 +1748,8 @@ class NumBox(pythics.libcontrol.Control):
     def _set_value(self, value):
         self._set_parameter(value)
 
-    value = property(_get_value, _set_value)
+    value = property(_get_value, _set_value, doc=\
+        """The numerical value entered.""")
 
 
 ##
@@ -1645,7 +1839,7 @@ class RadioButtonBox(pythics.libcontrol.Control):
         list of choices to display, with one radio button per choice
 
       *actions*: dict
-        a dictionarly of key:value pairs where the key is the name of a signal
+        a dictionary of key:value pairs where the key is the name of a signal
         and value is the function to run when the signal is emitted
 
         actions in this control:
@@ -1654,9 +1848,7 @@ class RadioButtonBox(pythics.libcontrol.Control):
         signal              when emitted
         ================    ===================================================
         'clicked'           button is clicked
-        'pressed'           button is pressed
-        'released'          button is released
-        'toggled'           button changes state (only if toggle=True)
+        'toggled'           button changes state
         ================    ===================================================
     """
     def __init__(self, parent, label='', rows=None, columns=None, choices=[],
@@ -1668,14 +1860,14 @@ class RadioButtonBox(pythics.libcontrol.Control):
         else:
             by_row = False
             major_dimension = columns
-        self._widget = QtGui.QGroupBox(label)
+        self._widget = QtWidgets.QGroupBox(label)
         self._choices = choices
-        self._grid = QtGui.QGridLayout()
+        self._grid = QtWidgets.QGridLayout()
         self._buttons = list()
         major = 0
         minor = 0
         for c in self._choices:
-            rb = QtGui.QRadioButton(c)
+            rb = QtWidgets.QRadioButton(c)
             self._buttons.append(rb)
             if by_row:
                 self._grid.addWidget(rb, major, minor)
@@ -1719,7 +1911,8 @@ class RadioButtonBox(pythics.libcontrol.Control):
     def _set_value(self, value):
         self._set_parameter(value)
 
-    value = property(_get_value, _set_value)
+    value = property(_get_value, _set_value, doc=\
+        """The value selected by the user.""")
 
 
 #
@@ -1740,7 +1933,7 @@ class ScrollBar(pythics.libcontrol.Control):
         orientation of the scrollbar
 
       *actions*: dict
-        a dictionarly of key:value pairs where the key is the name of a signal
+        a dictionary of key:value pairs where the key is the name of a signal
         and value is the function to run when the signal is emitted
 
         actions in this control:
@@ -1763,7 +1956,7 @@ class ScrollBar(pythics.libcontrol.Control):
             self._style = QtCore.Qt.Vertical
         else:
             self._style = QtCore.Qt.Horizontal
-        self._widget = QtGui.QScrollBar(self._style)
+        self._widget = QtWidgets.QScrollBar(self._style)
         self._widget.setTracking(tracking)
 
     def _get_parameter(self):
@@ -1786,8 +1979,9 @@ class ScrollBar(pythics.libcontrol.Control):
         with self._block_signals():
             self._widget.setValue(value)
 
-    value = property(_get_value, _set_value)
-
+    value = property(_get_value, _set_value, doc=\
+        """An integer giving the current scroll bar position.""")
+        
     def _get_ranges(self):
         return (self._widget.pageStep(), self._widget.maximum())
 
@@ -1795,7 +1989,8 @@ class ScrollBar(pythics.libcontrol.Control):
         self._widget.setMaximum(value[1])
         self._widget.setPageStep(value[0])
 
-    ranges = property(_get_ranges, _set_ranges)
+    ranges = property(_get_ranges, _set_ranges, doc=\
+        """A tuple containing the maximum scroll value and page step.""")
 
 
 #
@@ -1816,7 +2011,7 @@ class Shell(pythics.libcontrol.Control):
         size of font to use for shell text in points
 
       *actions*: dict
-        a dictionarly of key:value pairs where the key is the name of a signal
+        a dictionary of key:value pairs where the key is the name of a signal
         and value is the function to run when the signal is emitted
 
         actions in this control:
@@ -1887,7 +2082,7 @@ class Shell(pythics.libcontrol.Control):
 #      *style*: [ 'trough' (default) | 'slot' | 'both' ]
 #
 #      *actions*: dict
-#        a dictionarly of key:value pairs where the key is the name of a signal
+#        a dictionary of key:value pairs where the key is the name of a signal
 #        and value is the function to run when the signal is emitted
 #
 #        actions in this control:
@@ -1981,7 +2176,7 @@ class SubWindow(pythics.libcontrol.Control):
         self._process = process
         self._proxy_key = proxy_key
         self._proxy = pythics.proxies.SubWindowProxy()
-        for k, v in self._controls.iteritems():
+        for k, v in self._controls.items():
             # _register() controls in the SubWindow
             pk = process.new_ProxyKey(v)
             if hasattr(v, '_register'):
@@ -2001,14 +2196,14 @@ class SubWindow(pythics.libcontrol.Control):
     # the usual Control methods
 
     def _redraw(self):
-        for k, c in self._controls.items():
+        for k, c in list(self._controls.items()):
             c._redraw()
 
     def _get_parameter(self):
         # gather data from each control in the SubWindow in a dict
         #   the SubWindow itself has no data
         data_dict = dict()
-        for k, control in self._controls.iteritems():
+        for k, control in self._controls.items():
             if control.save == True:
                 data_dict[k] = control._get_parameter()
         return data_dict
@@ -2016,7 +2211,7 @@ class SubWindow(pythics.libcontrol.Control):
     def _set_parameter(self, value):
         # set data in each control in the SubWindow
         #   the SubWindow itself has no data
-        for k, data in value.iteritems():
+        for k, data in value.items():
             try:
                 self._controls[k]._set_parameter(data)
             except KeyError:
@@ -2049,8 +2244,10 @@ class TextBox(pythics.libcontrol.Control):
       *font_size*: int (default 10)
         size of font to use for text in points
 
+      *font_weight*: ['Light' | 'Normal' (default) | 'DemiBold' | 'Bold' | 'Black']
+
       *actions*: dict
-        a dictionarly of key:value pairs where the key is the name of a signal
+        a dictionary of key:value pairs where the key is the name of a signal
         and value is the function to run when the signal is emitted
 
         actions in this control:
@@ -2067,24 +2264,35 @@ class TextBox(pythics.libcontrol.Control):
          =======================    ============================================
     """
     def __init__(self, parent, align='left', multiline=False, read_only=False,
-                 font='Consolas', font_size=10, **kwargs):
+                 font='Consolas', font_size=10, font_weight='Normal', **kwargs):
         pythics.libcontrol.Control.__init__(self, parent, **kwargs)
-        self._widget = QtGui.QTextEdit()
+        self._widget = QtWidgets.QTextEdit()
         if read_only:
             self._widget.setReadOnly(True)
         if align == 'right':
-            self._widget.setAlignment(QtCore.Qt.AlignRight)
+            self._alignment = QtCore.Qt.AlignRight
         elif align == 'center':
-            self._widget.setAlignment(QtCore.Qt.AlignCenter)
+            self._alignment = QtCore.Qt.AlignCenter
         else:
-            self._widget.setAlignment(QtCore.Qt.AlignLeft)
+            self._alignment = QtCore.Qt.AlignLeft
+        self._widget.setAlignment(self._alignment)
         if multiline:
-            self._widget.setLineWrapMode(QtGui.QTextEdit.WidgetWidth)
+            self._widget.setLineWrapMode(QtWidgets.QTextEdit.WidgetWidth)
         else:
-            self._widget.setLineWrapMode(QtGui.QTextEdit.NoWrap)
+            self._widget.setLineWrapMode(QtWidgets.QTextEdit.NoWrap)
             self._widget.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
             self._widget.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-        self._widget.document().setDefaultFont(QtGui.QFont(font, font_size, QtGui.QFont.Normal))
+        if font_weight == 'Light':
+            weight = QtGui.QFont.Light
+        elif font_weight == 'DemiBold':
+            weight = QtGui.QFont.DemiBold
+        elif font_weight == 'Bold':
+            weight = QtGui.QFont.Bold
+        elif font_weight == 'Black':
+            weight = QtGui.QFont.Black
+        else:
+            weight = QtGui.QFont.Normal
+        self._widget.document().setDefaultFont(QtGui.QFont(font, font_size, weight))
         # set default height to approximately 1 line of text
         metrics = self._widget.fontMetrics()
         self._widget.setFixedHeight(1.8*metrics.lineSpacing())
@@ -2094,10 +2302,11 @@ class TextBox(pythics.libcontrol.Control):
 
     def _set_parameter(self, value):
         with self._block_signals():
-            if type(value) == unicode:
+            if type(value) == str:
                 self._widget.setPlainText(value)
             else:
                 self._widget.setPlainText(str(value))
+            self._widget.setAlignment(self._alignment)
 
     #---------------------------------------
     # methods below used for access by proxy
@@ -2128,11 +2337,17 @@ class TextIOBox(TextBox):
       *align*: [ 'left' (default) | 'center' | 'right' ]
         justification of text
 
+      *logging*: [ *True* | *False* (default) ]
+        if *True*, optimize the display for speed of displaying the output of
+        a Python logger
+
       *auto_update*: [ *True* (default) | *False* ]
-        if *False*, a call to TextIOBox.flush() is required to display text
+        if *False*, a call to TextIOBox.flush() is required to display text;
+        has no effect if *logging* is *True*
 
       *reverse*: [ *True* | *False* (default) ]
-        if *True*, newer entries are displayed at the top
+        if *True*, newer lines are displayed at the top;
+        has no effect if *logging* is *True*
 
       *font*: str (default 'Consolas')
         name of font to use for text
@@ -2140,11 +2355,11 @@ class TextIOBox(TextBox):
       *font_size*: int (default 10)
         size of font to use for text in points
     """
-    def __init__(self, parent, align='left', auto_update=True,
+    def __init__(self, parent, align='left', logging='False', auto_update=True,
                  reverse=False, font='Consolas', font_size=10,
                  **kwargs):
         pythics.libcontrol.Control.__init__(self, parent, **kwargs)
-        self._widget = QtGui.QTextEdit()
+        self._widget = QtWidgets.QTextEdit()
         self._widget.setReadOnly(True)
         if align == 'right':
             self._widget.setAlignment(QtCore.Qt.AlignRight)
@@ -2152,11 +2367,18 @@ class TextIOBox(TextBox):
             self._widget.setAlignment(QtCore.Qt.AlignCenter)
         else:
             self._widget.setAlignment(QtCore.Qt.AlignLeft)
-        self._widget.setLineWrapMode(QtGui.QTextEdit.WidgetWidth)
+        self._widget.setLineWrapMode(QtWidgets.QTextEdit.WidgetWidth)
         self._widget.document().setDefaultFont(QtGui.QFont(font, font_size, QtGui.QFont.Normal))
-        self._auto_update = auto_update
-        self._reverse = reverse
         self._string_io = StringIO.StringIO()
+        # if only write() flush(), and clear() are used, text can be simply appended
+        #   for much greater speed, especially useful with logging
+        self._logging = logging
+        if logging:
+            self._auto_update = False
+            self._reverse = False
+        else:
+            self._auto_update = auto_update
+            self._reverse = reverse
 
     def _get_parameter(self):
         return self._string_io.getvalue()
@@ -2184,7 +2406,7 @@ class TextIOBox(TextBox):
 
     def clear(self, *args, **kwargs):
         self._string_io = StringIO.StringIO()
-        if(self._auto_update):
+        if(self._auto_update or self._logging):
             self._update_value()
 
     def scroll(self, dx, dy):
@@ -2197,9 +2419,10 @@ class TextIOBox(TextBox):
         pass
 
     def flush(self, *args, **kwargs):
-        result = self._string_io.flush(*args, **kwargs)
-        self._update_value()
-        return result
+        if not self._logging:
+            result = self._string_io.flush(*args, **kwargs)
+            self._update_value()
+            return result
 
     def getvalue(self, *args, **kwargs):
         return self._string_io.getvalue(*args, **kwargs)
@@ -2221,6 +2444,8 @@ class TextIOBox(TextBox):
 
     def reset(self, *args, **kwargs):
         return self._string_io.reset(*args, **kwargs)
+        if(self._auto_update or self._logging):
+            self._update_value()
 
     def seek(self, *args, **kwargs):
         return self._string_io.seek(*args, **kwargs)
@@ -2230,17 +2455,23 @@ class TextIOBox(TextBox):
 
     def truncate(self, *args, **kwargs):
         self._string_io.truncate(*args, **kwargs)
-        if(self._auto_update):
+        if(self._auto_update or self._logging):
             self._update_value()
 
     def write(self, *args, **kwargs):
-        self._string_io.write(*args, **kwargs)
-        if(self._auto_update):
+        if self._logging:
+            # accelerated writing for simple access
+            # append() adds a newline so we remove the original newline
+            # remove any blank lines, which were likely just newlines
+            s = args[0].strip()
+            if s != '':
+                self._widget.append(s)
+        elif(self._auto_update):
             self._update_value()
 
     def writelines(self, *args, **kwargs):
         self._string_io.writelines(*args, **kwargs)
-        if(self._auto_update):
+        if(self._auto_update or self._logging):
             self._update_value()
 
     def __len__(self):
@@ -2248,72 +2479,22 @@ class TextIOBox(TextBox):
 
 
 #
-# Timer
-#
-class Timer(pythics.libcontrol.Control):
-    """A control which makes calls to an action at regular time intervals. Most
-    settings are controlled in a call to `start`, which begins the timer. The
-    timer can be stopped by calling the `stop` method. The timer may be started
-    and stopped multiple times. Due to the mult-threaded nature of Timers, most
-    control properties are read-only and can only be set by calling `start`.
-
-    HTML parameters:
-
-      *action*: name of a function to run when the timer is triggered (*None*)
-
-      *label*: [ str | *None* (default) ]
-        text to show in GUI
-
-      *actions*: dict
-        a dictionarly of key:value pairs where the key is the name of a signal
-        and value is the function to run when the signal is emitted
-
-        actions in this control:
-
-        ================    ===================================================
-        signal              when emitted
-        ================    ===================================================
-        'triggered'         action is triggered
-        ================    ===================================================
-    """
-    def __init__(self, parent, label=None, **kwargs):
-        pythics.libcontrol.Control.__init__(self, parent, **kwargs)
-        if label is None or label == '':
-            self._widget = None
-        else:
-            self._widget = QtGui.QLabel(label)
-
-    def _register(self, process, element_id, proxy_key):
-        self._element_id = element_id
-        self._process = process
-        if 'triggered' in self.actions:
-            action = self.actions['triggered']
-        else:
-            action = None
-        self._proxy = pythics.proxies.TimerProxy(action)
-
-    #-------------------------------------------------------------------
-    # no methods for access by action proxy - all functionality in proxy
-    #-------------------------------------------------------------------
-
-
-#
 # RunButton
 #
 class RunButton(pythics.libcontrol.Control):
-    """A toggle button which makes calls to a specially-constructed function, 
+    """A toggle button which makes calls to a specially-constructed function,
     the action for the `run` signal, to create an action at regular intervals.
-    The run function should use the python yield keyword, followed by the 
-    desired delay or interval between calls, in seconds. The required delay 
+    The run function should use the python yield keyword, followed by the
+    desired delay or interval between calls, in seconds. The required delay
     will occur at the yield call, and during that delay other functions in your
-    python file can be called. Thus, the runbutton gives the functionality of 
+    python file can be called. Thus, the runbutton gives the functionality of
     using a Timer with the simplicity of writing a loop. See the ChartRecorder
     example for a demonstration.
-    
-    In most cases, the RunButton will be started by pressing the button in the 
-    GUI, and ended by your run function returning, rather than yielding. 
-    Pressing the button to stop will abort and delay and allow your run 
-    function to return. From the python side, start(), stop(), abort(), and 
+
+    In most cases, the RunButton will be started by pressing the button in the
+    GUI, and ended by your run function returning, rather than yielding.
+    Pressing the button to stop will abort and delay and allow your run
+    function to return. From the python side, start(), stop(), abort(), and
     kill() give control over the execution, if needed.
 
     HTML parameters:
@@ -2322,12 +2503,12 @@ class RunButton(pythics.libcontrol.Control):
         text to be displayed on the button
 
       *interval*: [ *True* (default) | *False* ]
-        whether the time given in the yield statement should be treated as a 
+        whether the time given in the yield statement should be treated as a
         strict delay (interval=False) or as the requested time between steps in
         your run function (interval=True)
 
       *actions*: dict
-        a dictionarly of key:value pairs where the key is the name of a signal
+        a dictionary of key:value pairs where the key is the name of a signal
         and value is the function to run when the signal is emitted
 
         actions in this control:
@@ -2335,17 +2516,15 @@ class RunButton(pythics.libcontrol.Control):
         ================    ===================================================
         signal              when emitted
         ================    ===================================================
-        'run'               button changes state from unchecked to checked
+        'run'               button changes state from unpressed to pressed
         ================    ===================================================
     """
     def __init__(self, parent, label='Start/Stop', interval=True, **kwargs):
         pythics.libcontrol.Control.__init__(self, parent, save=False, **kwargs)
-        self._widget = QtGui.QToolButton()
+        self._widget = QtWidgets.QToolButton()
         self._widget.setToolButtonStyle(QtCore.Qt.ToolButtonTextOnly)
-        self._widget.setSizePolicy(QtGui.QSizePolicy.Minimum,
-                                  QtGui.QSizePolicy.Fixed)
-        h = self._widget.minimumSizeHint().height()
-        self._widget.setMinimumHeight(h+4)
+        self._widget.setSizePolicy(QtWidgets.QSizePolicy.Minimum,
+                                  QtWidgets.QSizePolicy.Fixed)
         self._widget.setText(label)
         self._widget.setCheckable(True)
         self._time_interval = interval
@@ -2372,10 +2551,10 @@ class RunButton(pythics.libcontrol.Control):
     def _toggled(self):
         if not self._blocked:
             if self._widget.isChecked():
-                self._process.exec_master_to_proxy_call_request(self._element_id, 
+                self._process.exec_parent_to_proxy_call_request(self._element_id,
                 'start', update_button_state=False)
             else:
-                self._process.exec_master_to_proxy_call_request(self._element_id, 
+                self._process.exec_parent_to_proxy_call_request(self._element_id,
                 'abort')
 
     #---------------------------------------------------
@@ -2389,7 +2568,7 @@ class RunButton(pythics.libcontrol.Control):
 
     label = property(_get_label, _set_label, doc=\
         """Text to be displayed on the button.""")
-        
+
     def _get_value(self):
         return self._widget.isChecked()
 

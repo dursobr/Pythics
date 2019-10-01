@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2008 - 2014 Brian R. D'Urso
+# Copyright 2008 - 2019 Brian R. D'Urso
 #
 # This file is part of Python Instrument Control System, also known as Pythics.
 #

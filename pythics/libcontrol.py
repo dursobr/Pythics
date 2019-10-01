@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2008 - 2013 Brian R. D'Urso
+# Copyright 2008 - 2019 Brian R. D'Urso
 #
 # This file is part of Python Instrument Control System, also known as Pythics.
 #
@@ -23,6 +23,36 @@
 # load libraries
 #
 import collections
+
+from pythics.settings import _TRY_PYSIDE
+try:
+    if not _TRY_PYSIDE:
+        raise ImportError()
+    import PySide2.QtCore as _QtCore
+    import PySide2.QtGui as _QtGui
+    import PySide2.QtWidgets as _QtWidgets
+    import PySide2.QtPrintSupport as _QtPrintSupport
+    QtCore = _QtCore
+    QtGui = _QtGui
+    QtWidgets = _QtWidgets
+    QtPrintSupport = _QtPrintSupport
+    Signal = QtCore.Signal
+    Slot = QtCore.Slot
+    Property = QtCore.Property
+    USES_PYSIDE = True
+except ImportError:
+    import PyQt5.QtCore as _QtCore
+    import PyQt5.QtGui as _QtGui
+    import PyQt5.QtWidgets as _QtWidgets
+    import PyQt5.QtPrintSupport as _QtPrintSupport
+    QtCore = _QtCore
+    QtGui = _QtGui
+    QtWidgets = _QtWidgets
+    QtPrintSupport = _QtPrintSupport
+    Signal = QtCore.pyqtSignal
+    Slot = QtCore.pyqtSlot
+    Property = QtCore.pyqtProperty
+    USES_PYSIDE = False
 
 
 #
@@ -80,7 +110,7 @@ class Control(object):
     def _exec_action(self, k):
         if self.enabled and (not self._blocked):
             if k in self.actions:
-                self._process.exec_master_to_slave_call_request(self.actions[k])
+                self._process.exec_parent_to_child_call_request(self.actions[k])
 
     def _get_enabled(self):
         return self._enabled
@@ -135,6 +165,7 @@ class MPLControl(Control):
         will be added to the deque. The action should retrieve the event
         information with events.pop().
         """)
+
 
 # THIS MAY NOT BE NEEDED ANYMORE
 def str_to_bool(string):

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2008 - 2014 Brian R. D'Urso
+# Copyright 2008 - 2019 Brian R. D'Urso
 #
 # This file is part of Python Instrument Control System, also known as Pythics.
 #
@@ -24,100 +24,94 @@
 #
 import multiprocessing
 import pickle
-import types
 
 import numpy as np
-#from PyQt4 import QtCore
+import collections
+
 from pythics.settings import _TRY_PYSIDE
 try:
     if not _TRY_PYSIDE:
         raise ImportError()
-    import PySide.QtCore as _QtCore
-    import PySide.QtGui as _QtGui
+    import PySide2.QtCore as _QtCore
+    import PySide2.QtGui as _QtGui
+    import PySide2.QtWidgets as _QtWidgets
+    import PySide2.QtPrintSupport as _QtPrintSupport
     QtCore = _QtCore
     QtGui = _QtGui
+    QtWidgets = _QtWidgets
+    QtPrintSupport = _QtPrintSupport
+    Signal = QtCore.Signal
+    Slot = QtCore.Slot
+    Property = QtCore.Property
     USES_PYSIDE = True
 except ImportError:
-    import sip
-    sip.setapi('QString', 2)
-    sip.setapi('QVariant', 2)
-    import PyQt4.QtCore as _QtCore
-    import PyQt4.QtGui as _QtGui
+    import PyQt5.QtCore as _QtCore
+    import PyQt5.QtGui as _QtGui
+    import PyQt5.QtWidgets as _QtWidgets
+    import PyQt5.QtPrintSupport as _QtPrintSupport
     QtCore = _QtCore
     QtGui = _QtGui
+    QtWidgets = _QtWidgets
+    QtPrintSupport = _QtPrintSupport
+    Signal = QtCore.pyqtSignal
+    Slot = QtCore.pyqtSlot
+    Property = QtCore.pyqtProperty
     USES_PYSIDE = False
 
-import pythics.slave
+import pythics.child
 import pythics.libproxy
-
-
-if USES_PYSIDE:
-	Signal = QtCore.Signal
-	Slot = QtCore.Slot
-	Property = QtCore.Property
-else:
-	Signal = QtCore.pyqtSignal
-	Slot = QtCore.pyqtSlot
-	Property = QtCore.pyqtProperty
  
 
 #
-# Master is the main object which manages everything in Pythics.
+# Parent is the main object which manages everything in Pythics.
 #   You should usually create only one instance
 #
-class Master(QtCore.QObject):
-    def __init__(self):
+class Parent(QtCore.QObject):
+    def __init__(self, manager):
         QtCore.QObject.__init__(self)
-        self.multiprocess_manager = multiprocessing.Manager()
-        self.slave_to_master_call_queue = self.multiprocess_manager.Queue()
+        self.multiprocess_manager = manager
+        self.child_to_parent_call_queue = self.multiprocess_manager.Queue()
         self.global_namespaces = dict()
         self.global_actions = dict()
-        self.last_slave_process_index = 0
-        self.slave_processes = dict()
+        self.last_child_process_index = 0
+        self.child_processes = dict()
         self.logger = multiprocessing.get_logger()
 
     def start(self):
-        # thread to relay command requests from slave processes to GUI
+        # thread to relay command requests from child processes to GUI
         self.watcher_thread = QtCore.QThread()
-        self.watcher = QueueWatcher(self, self.slave_to_master_call_queue, self.logger)
+        self.watcher = QueueWatcher(self, self.child_to_parent_call_queue, self.logger)
         self.watcher.moveToThread(self.watcher_thread)
-        self.watcher.call_requested.connect(self.exec_slave_to_master_call_request,
+        self.watcher.call_requested.connect(self.exec_child_to_parent_call_request,
                                             type=QtCore.Qt.QueuedConnection)
         self.watcher_thread.started.connect(self.watcher.watch_queue)
-        self.watcher.finished.connect(self.stop_watcher)
         self.watcher_thread.start()
-
-    def stop_watcher(self):
-        self.watcher_thread.quit()
-        # wait 2 seconds for the thread to die
-        success = self.watcher_thread.wait(2000)
-        self.logger.debug('QueueWatcher stopped? ' + str(success))
 
     # USED FOR ALTERNATIVE SIGNALLING METHOD USING POST_EVENT
     #def customEvent(self, command_event):
-    #    self.exec_slave_to_master_call_request(command_event.command)
+    #    self.exec_child_to_parent_call_request(command_event.command)
 
-    def exec_slave_to_master_call_request(self, command):
-        # executes a command in a control requested by a slave process
+    def exec_child_to_parent_call_request(self, command):
+        # executes a command in a control requested by a child process
         # protect from exceptions to avoid interrupting program
         try:
             process_id, function_name, args, kwargs = command
             #self.logger.debug('Executing %s.' % str((process_id, function_name, args, kwargs)))
-            self.slave_processes[process_id].exec_slave_to_master_call_request(function_name, args, kwargs)
+            self.child_processes[process_id].exec_child_to_parent_call_request(function_name, args, kwargs)
         except:
-            self.logger.exception('Error in MasterManager.execute_slave_to_master_call_request while executing call request from slave process in master process.')
+            self.logger.exception('Error in Parent.execute_child_to_parent_call_request while executing call request from child process in parent process.')
 
-    def new_slave_process(self, path, name, anonymous_controls, controls):
-        new_index = self.last_slave_process_index + 1
+    def new_child_process(self, path, name, anonymous_controls, controls):
+        new_index = self.last_child_process_index + 1
         new_id = str(new_index)
-        self.last_slave_process_index = new_index
+        self.last_child_process_index = new_index
         name = name + '_' + new_id
-        new_process = SlaveInterface(self,
-                                     self.slave_to_master_call_queue,
+        new_process = ChildInterface(self,
+                                     self.child_to_parent_call_queue,
                                      self.multiprocess_manager,
                                      new_id,
                                      path, name, anonymous_controls, controls)
-        self.slave_processes[new_id] = new_process
+        self.child_processes[new_id] = new_process
         return new_process
 
     def get_global_namespace(self, name):
@@ -133,8 +127,8 @@ class Master(QtCore.QObject):
             actions = self.global_actions[trigger_id]
             for a in actions:
                 process_id, proxy_key = a
-                if process_id in self.slave_processes:
-                    self.slave_processes[process_id].exec_trigger_request(proxy_key)
+                if process_id in self.child_processes:
+                    self.child_processes[process_id].exec_trigger_request(proxy_key)
                 else:
                     # that process is not around anymore, so remove the action
                     actions.remove(a)
@@ -147,46 +141,47 @@ class Master(QtCore.QObject):
         else:
             self.global_actions[trigger_id] = [(process_id, proxy_key)]
 
-    def stop_slave_process(self, process):
+    def stop_child_process(self, process):
         process.stop()
-        self.slave_processes.pop(process.process_id)
+        self.child_processes.pop(process.process_id)
 
     def stop(self):
-        # stop the SlaveProcesses
-        for p in self.slave_processes.itervalues():
+        # stop the ChildProcesses
+        for p in self.child_processes.values():
             p.stop()
         # stop the QueueWatcher
-        self.slave_to_master_call_queue.put((None, None, None, None))
+        self.child_to_parent_call_queue.put((None, None, None, None))
         self.logger.debug('Signaled QueueWatcher to stop.')
+        self.watcher_thread.quit()
+        # wait 2 seconds for the thread to die
+        success = self.watcher_thread.wait(2000)
+        self.logger.debug('QueueWatcher stopped? ' + str(success))
 
 
 #
-# object which gets moved to the master process queue watching thread
+# object which gets moved to the parent process queue watching thread
 #
 class QueueWatcher(QtCore.QObject):
-    def __init__(self, master, queue_to_watch, logger, *args):
+    def __init__(self, parent, queue_to_watch, logger, *args):
         super(QueueWatcher, self).__init__(*args)
-        self.master = master
+        self.parent = parent
         self.watched_queue = queue_to_watch
         self.logger = logger
 
     # define a Qt signal 'call_requested' that takes a tuple argument
     call_requested = Signal(tuple, name='call_requested')
 
-    # a Qt signal to exit the thread
-    finished = Signal(name='finished')
-
     def watch_queue(self):
-        # executes in the master process, queue watcher thread
+        # executes in the parent process, queue watcher thread
         stop = False
         while stop == False:
             try:
                 command = self.watched_queue.get()
-                #self.logger.debug("Master watch_queue loop received '%s'" % str(command))
+                #self.logger.debug("Parent watch_queue loop received '%s'" % str(command))
                 if command[0] is not None:
                     self.call_requested.emit(command)
                     # USED FOR ALTERNATIVE SIGNALLING METHOD USING POST_EVENT
-                    #QtCore.QCoreApplication.postEvent(self.master,
+                    #QtCore.QCoreApplication.postEvent(self.parent,
                     #                                  CommandEvent(command))
                 else:
                     self.logger.debug('QueueWatcher.watch_queue() has detected a stop request.')
@@ -194,7 +189,6 @@ class QueueWatcher(QtCore.QObject):
             except:
                 self.logger.exception('Error in QueueWatcher.watch_queue().')
         self.logger.debug('QueueWatcher.watch_queue() is exiting.')
-        self.finished.emit()
 
 
 # USED FOR ALTERNATIVE SIGNALLING METHOD USING POST_EVENT
@@ -205,15 +199,15 @@ class QueueWatcher(QtCore.QObject):
 
 
 #
-# Interface for slave processes from the master process
-#   Create one instance for each slave process.
+# Interface for child processes from the parent process
+#   Create one instance for each child process.
 #
-class SlaveInterface(object):
-    def __init__(self, master, slave_to_master_call_queue, manager, process_id,
+class ChildInterface(object):
+    def __init__(self, parent, child_to_parent_call_queue, manager, process_id,
                  path, name, anonymous_controls, controls):
-        self.master = master
+        self.parent = parent
         self.logger = multiprocessing.get_logger()
-        self.slave_to_master_call_queue = slave_to_master_call_queue
+        self.child_to_parent_call_queue = child_to_parent_call_queue
         self.manager = manager
         self.process_id = process_id
         self.path = path
@@ -223,28 +217,28 @@ class SlaveInterface(object):
         self.controls = controls
         # list of controls without ids
         self.anonymous_controls = anonymous_controls
-        # queues for communication between master and slave
-        self.master_to_slave_call_queue = manager.Queue()
-        self.slave_to_master_call_return_queue = manager.Queue()
+        # queues for communication between parent and child
+        self.parent_to_child_call_queue = manager.Queue()
+        self.child_to_parent_call_return_queue = manager.Queue()
         # This semaphore restricts the number of GUI requests from each
-        #  slave process to a certain number at any time.
+        #  child process to a certain number at any time.
         #  The number of requests available to each process can be set here.
         #  The minimum preferable value is 2 in order to be sure the GUI
         #  process remains busy. Setting it to 1 would effectively give
         #  completely synchronous execution. Higher values would potentially
         #  buffer more requests.
-        self.slave_to_master_call_queue_semaphore = manager.Semaphore(2)
-        self.slave_process = None
+        self.child_to_parent_call_queue_semaphore = manager.Semaphore(2)
+        self.child_process = None
         # objects which have proxies
         self.objects = dict()
-        self.fully_picklable_types = [int, long, float, bool, str, unicode, types.NoneType, np.ndarray]
-        self.fully_picklable_types.extend(np.typeDict.values())
+        self.fully_picklable_types = [int, float, bool, str, type(None), np.ndarray]
+        self.fully_picklable_types.extend(list(np.typeDict.values()))
         self.control_proxies = dict()
         self.module_names = list()
         self.initialization_commands = list()
         self.termination_commands = list()
         # loop through controls to create proxies, etc.
-        for k, v in controls.iteritems():
+        for k, v in controls.items():
             # _register() is an opportunity for controls to add to:
             #   module_names, initialization_commands, termination_commands,
             #   or to add global variables
@@ -266,30 +260,30 @@ class SlaveInterface(object):
                 v._register(self, None, None)
 
     def start(self):
-        slave = pythics.slave.Slave(self.process_id,
-                      self.slave_to_master_call_queue,
-                      self.slave_to_master_call_return_queue,
-                      self.slave_to_master_call_queue_semaphore,
-                      self.master_to_slave_call_queue,
+        child = pythics.child.Child(self.process_id,
+                      self.child_to_parent_call_queue,
+                      self.child_to_parent_call_return_queue,
+                      self.child_to_parent_call_queue_semaphore,
+                      self.parent_to_child_call_queue,
                       self.path,
                       self.module_names,
                       self.control_proxies)
-        self.slave_process = multiprocessing.Process(name=self.name,
-                                                     target=slave.process_loop)
-        self.slave_process.start()
+        self.child_process = multiprocessing.Process(name=self.name,
+                                                     target=child.process_loop)
+        self.child_process.start()
         # call initialization functions
         for item in self.initialization_commands:
-            self.exec_master_to_slave_call_request(item)
+            self.exec_parent_to_child_call_request(item)
 
     def new_global_namespace(self, element_id):
-        namespace = self.master.get_global_namespace(element_id)
+        namespace = self.parent.get_global_namespace(element_id)
         return namespace
 
     def new_global_action(self, element_id, proxy_key):
-        self.master.new_global_action(self.process_id, element_id, proxy_key)
+        self.parent.new_global_action(self.process_id, element_id, proxy_key)
 
     def trigger_global_action(self, action_id):
-        self.master.trigger_global_action(action_id)
+        self.parent.trigger_global_action(action_id)
 
     def append_initialization_command(self, command):
         self.initialization_commands.append(command)
@@ -301,20 +295,20 @@ class SlaveInterface(object):
         if not module_name in self.module_names:
             self.module_names.append(module_name)
 
-    def exec_slave_to_master_call_request(self, function_name, args, kwargs):
-        # executes a command in this (SlaveInterface) object
+    def exec_child_to_parent_call_request(self, function_name, args, kwargs):
+        # executes a command in this (ChildInterface) object
         f = getattr(self, function_name)
         f(*args, **kwargs)
 
-    def exec_master_to_slave_call_request(self, command):
+    def exec_parent_to_child_call_request(self, command):
         c = command.split('.')
-        self.logger.debug("Put in master_to_slave_call_queue: '%s'." % str((c[0], c[1])))
-        self.master_to_slave_call_queue.put((c[0], c[1]))
+        self.logger.debug("Put in parent_to_child_call_queue: '%s'." % str((c[0], c[1])))
+        self.parent_to_child_call_queue.put((c[0], c[1]))
 
-    def exec_master_to_proxy_call_request(self, proxy_id, method, *args, **kwargs):
+    def exec_parent_to_proxy_call_request(self, proxy_id, method, *args, **kwargs):
         message = pythics.libproxy.ProxyMessage(proxy_id, method, *args, **kwargs)
-        self.logger.debug("Put in master_to_slave_call_queue: '%s'." % str((None, message)))
-        self.master_to_slave_call_queue.put((None, message))
+        self.logger.debug("Put in parent_to_child_call_queue: '%s'." % str((None, message)))
+        self.parent_to_child_call_queue.put((None, message))
 
     def exec_trigger_request(self, proxy_key):
         self.lookup(proxy_key)._exec_action('triggered')
@@ -323,12 +317,12 @@ class SlaveInterface(object):
         if filename is None:
             filename = self.default_parameter_filename
         try:
-            with open(filename, 'rU') as file:
+            with open(filename, 'rb') as file:
                 temp_dict = pickle.load(file)
         except:
             self.logger.error("Problem loading parameter file '%s'. Parameter loading aborted." % filename)
         else:
-            for k, v in temp_dict.iteritems():
+            for k, v in temp_dict.items():
                 try:
                     self.controls[k]._set_parameter(v)
                 except KeyError:
@@ -339,9 +333,9 @@ class SlaveInterface(object):
     def save_parameters(self, filename=None):
         if filename is None:
             filename = self.default_parameter_filename
-        with open(filename, 'w') as file:
+        with open(filename, 'wb') as file:
             temp_dict = dict()
-            for k, v in self.controls.iteritems():
+            for k, v in self.controls.items():
                 try:
                     if hasattr(v, 'save') and v.save == True:
                         if hasattr(v, '_get_parameter'):
@@ -360,14 +354,16 @@ class SlaveInterface(object):
         try:
             # call termination functions
             for item in self.termination_commands:
-                self.exec_master_to_slave_call_request(item)
+                self.exec_parent_to_child_call_request(item)
             self.logger.info("Stopping process '%s'." % self.name)
-            if self.slave_process.is_alive():
-                self.master_to_slave_call_queue.put((None, None))
+            if self.child_process.is_alive():
+                self.logger.debug("Passing (None, None) to process '%s'." % self.name)
+                self.parent_to_child_call_queue.put((None, None))
                 # try to stop the process; give it 5 seconds to stop peacefully
-                self.slave_process.join(5.0)
-                if self.slave_process.is_alive():
-                    self.slave_process.terminate()
+                self.logger.debug("Waiting for join() to process '%s'." % self.name)
+                self.child_process.join(5.0)
+                if self.child_process.is_alive():
+                    self.child_process.terminate()
                     self.logger.error("Action process '%s' was terminated abnormally." % self.name)
                 else:
                     self.logger.info("Process '%s' was terminated normally." % self.name)
@@ -380,7 +376,7 @@ class SlaveInterface(object):
     # methods for proxy handling
 
     def new_ProxyKey(self, original_object, cache=False):
-        new_key = 'AutoProxy_key_' + str(id(original_object))
+        new_key = 'AutoProxy_key_' + str(type(original_object)) + '_' + str(id(original_object))
         new_proxy = pythics.libproxy.ProxyKey(new_key, cache)
         if new_key in self.objects:
             self.objects[new_key] = (self.objects[new_key][0] + 1, original_object)
@@ -411,13 +407,13 @@ class SlaveInterface(object):
         elif t is dict:
             # have to check for unpicklable objects in the dict
             r = dict()
-            for k, v in value.iteritems():
+            for k, v in value.items():
                 r[k] = self.objects_to_keys(v)
             return r
         else:
             # some other type that has to be accessed by proxy
             #  because it may not be picklable
-            if callable(value):
+            if isinstance(value, collections.Callable):
                 # request that functions be cached since they usually don't change
                 return self.new_ProxyKey(value, cache=True)
             else:
@@ -446,12 +442,12 @@ class SlaveInterface(object):
         elif t is dict:
             # have to check for ProxyKeys in the dict
             r = dict()
-            for k, v in value.iteritems():
+            for k, v in value.items():
                 r[k] = self.keys_to_objects(v)
             return r
         elif t is pythics.libproxy.FunctionProxy:
             name = value.name
-            return lambda *args, **kwargs: self.exec_master_to_slave_call_request(name)
+            return lambda *args, **kwargs: self.exec_parent_to_child_call_request(name)
         else:
             # hopefully just a picklable type
             return value
@@ -467,13 +463,13 @@ class SlaveInterface(object):
             ret = self.objects_to_keys(r)
         except Exception as e:
             cpe = pythics.libproxy.CrossProcessExceptionProxy(str(e))
-            self.slave_to_master_call_return_queue.put(cpe)
+            self.child_to_parent_call_return_queue.put(cpe)
             # re-raise exception in this process
             raise
         else:
-            self.slave_to_master_call_return_queue.put(ret)
+            self.child_to_parent_call_return_queue.put(ret)
         finally:
-            self.slave_to_master_call_queue_semaphore.release()
+            self.child_to_parent_call_queue_semaphore.release()
 
     def get_Proxy_attr(self, proxy_key, name):
         try:
@@ -481,13 +477,13 @@ class SlaveInterface(object):
             ret = self.objects_to_keys(r)
         except Exception as e:
             cpe = pythics.libproxy.CrossProcessExceptionProxy(str(e))
-            self.slave_to_master_call_return_queue.put(cpe)
+            self.child_to_parent_call_return_queue.put(cpe)
             # re-raise exception in this process
             raise
         else:
-            self.slave_to_master_call_return_queue.put(ret)
+            self.child_to_parent_call_return_queue.put(ret)
         finally:
-            self.slave_to_master_call_queue_semaphore.release()
+            self.child_to_parent_call_queue_semaphore.release()
 
     def set_Proxy_attr(self, proxy_key, name, value):
         try:
@@ -495,11 +491,11 @@ class SlaveInterface(object):
             setattr(self.lookup(proxy_key), name, v)
         except Exception:
             logger = multiprocessing.get_logger()
-            logger.exception('Exception raised in master thread that cannot propagate to action process.')
+            logger.exception('Exception raised in parent thread that cannot propagate to action process.')
             # re-raise exception in this process
             raise
         finally:
-            self.slave_to_master_call_queue_semaphore.release()
+            self.child_to_parent_call_queue_semaphore.release()
 
     def call_Proxy_method(self, proxy_key, method_name, *args, **kwargs):
         try:
@@ -509,13 +505,13 @@ class SlaveInterface(object):
             ret = self.objects_to_keys(r)
         except Exception as e:
             cpe = pythics.libproxy.CrossProcessExceptionProxy(str(e))
-            self.slave_to_master_call_return_queue.put(cpe)
+            self.child_to_parent_call_return_queue.put(cpe)
             # re-raise exception in this process
             raise
         else:
-            self.slave_to_master_call_return_queue.put(ret)
+            self.child_to_parent_call_return_queue.put(ret)
         finally:
-            self.slave_to_master_call_queue_semaphore.release()
+            self.child_to_parent_call_queue_semaphore.release()
 
     def call_Proxy_method_no_return(self, proxy_key, method_name, *args, **kwargs):
         try:
@@ -524,11 +520,11 @@ class SlaveInterface(object):
             getattr(self.lookup(proxy_key), method_name)(*a, **kwa)
         except Exception:
             logger = multiprocessing.get_logger()
-            logger.exception('Exception raised in master thread that cannot propagate to action process.')
+            logger.exception('Exception raised in parent thread that cannot propagate to action process.')
             # re-raise exception in this process
             raise
         finally:
-            self.slave_to_master_call_queue_semaphore.release()
+            self.child_to_parent_call_queue_semaphore.release()
 
     def delete_Proxy(self, proxy_key):
         try:
@@ -540,8 +536,8 @@ class SlaveInterface(object):
                 self.objects[k] = (entry[0] - 1, entry[1])
         except Exception:
             logger = multiprocessing.get_logger()
-            logger.exception('Exception raised in master thread that cannot propagate to action process.')
+            logger.exception('Exception raised in parent thread that cannot propagate to action process.')
             # re-raise exception in this process
             raise
         finally:
-            self.slave_to_master_call_queue_semaphore.release()
+            self.child_to_parent_call_queue_semaphore.release()

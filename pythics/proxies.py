@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2008 - 2014 Brian R. D'Urso
+# Copyright 2008 - 2019 Brian R. D'Urso
 #
 # This file is part of Python Instrument Control System, also known as Pythics.
 #
@@ -43,13 +43,13 @@ except ImportError:
 def pil_to_rgb(pil_image):
     if (pil_image.mode != 'RGBA'):
         pil_image = pil_image.convert('RGBA')
-    image_data = pil_image.tostring('raw', 'BGRA')
+    image_data = pil_image.tobytes('raw', 'BGRA')
     return image_data, pil_image.size
 
 
 def rgb_to_pil(image_data, size):
     pil_image = PIL.Image.new('RGBA', size)
-    pil_image.fromstring(image_data)
+    pil_image.frombytes(image_data)
     return pil_image
 
 
@@ -93,37 +93,59 @@ class ConsoleBackend(code.InteractiveConsole):
 #
 class ImageProxy(pythics.libproxy.PartialAutoProxy):
     def __init__(self, *args, **kwargs):
-        local_attrs = ['image']
+        local_attrs = ['display']
         pythics.libproxy.PartialAutoProxy.__init__(self, local_attrs, *args, **kwargs)
 
-    def _get_image(self):
-        r = self._call_method('call_Proxy_method', self._key, '_get_image')
-        return rgb_to_pil(r[0], r[1])
+#    def _get_image(self):
+#        r = self._call_method('call_Proxy_method', self._key, '_get_image')
+#        return rgb_to_pil(r[0], r[1])
+#
+#    def _set_image(self, pil):
+#        args = pil_to_rgb(pil)
+#        self._call_method_no_return('call_Proxy_method_no_return', self._key, '_set_image', *args)
+#        
+#    image = property(_get_image, _set_image, doc="""None""")
 
-    def _set_image(self, pil):
-        args = pil_to_rgb(pil)
-        self._call_method_no_return('call_Proxy_method_no_return', self._key, '_set_image', *args)
-
-    image = property(_get_image, _set_image, doc="""None""")
+    def display(self, mode, size, data):
+        """Display an image in the control.
+        
+        Arguments:
+        
+          *mode*: [ 'L' | 'RGB' | 'RGBA' ]
+            Image mode 'L' = 8-bit greyscale
+                       'RGB' = 3x8-bit pixels, color
+                       'RGBA' =  4x8-bit pixels, color with transparency
+        
+          *size*: tuple
+            Size of the image (width, height)
+          
+          *data*: bytearray
+            Image as raw data, with no padding anywhere.
+        """
+        self._call_method_no_return('call_Proxy_method_no_return', self._key, '_display', mode, size, data)
 
 
 class ImageWithSharedProxy(pythics.libproxy.PartialAutoProxy):
     def __init__(self, shared_memory, *args, **kwargs):
-        local_attrs = ['image']
+        local_attrs = ['display']
         self._shared = shared_memory
         pythics.libproxy.PartialAutoProxy.__init__(self, local_attrs, *args, **kwargs)
 
-    def _get_image(self):
-        w, h = self._call_method('call_Proxy_method', self._key, '_get_image_with_shared')
-        return rgb_to_pil(self._shared.raw[0:(4*w*h)], (w, h))
+#    def _get_image(self):
+#        w, h = self._call_method('call_Proxy_method', self._key, '_get_image_with_shared')
+#        return rgb_to_pil(self._shared.raw[0:(4*w*h)], (w, h))
+#
+#    def _set_image(self, pil):
+#        if (pil.mode != 'RGBA'):
+#            pil = pil.convert('RGBA')
+#        self._shared.raw = pil.tobytes('raw', 'BGRA')
+#        self._call_method_no_return('call_Proxy_method_no_return', self._key, '_set_image_with_shared', pil.size)
+#
+#    image = property(_get_image, _set_image)
 
-    def _set_image(self, pil):
-        if (pil.mode != 'RGBA'):
-            pil = pil.convert('RGBA')
-        self._shared.raw = pil.tostring('raw', 'BGRA')
-        self._call_method_no_return('call_Proxy_method_no_return', self._key, '_set_image_with_shared', pil.size)
-
-    image = property(_get_image, _set_image)
+    def display(self, mode, size, data):
+        self._shared.raw = data
+        self._call_method_no_return('call_Proxy_method_no_return', self._key, '_display_shared', mode, size)
 
 
 #
@@ -204,7 +226,7 @@ class TimerProxy(object):
         # initialization delayed until proxy is moved to action process so
         #   threading objects are created in the right process
         self._process = process
-        self._master_to_slave_call_queue = self._process.master_to_slave_call_queue
+        self._parent_to_child_call_queue = self._process.parent_to_child_call_queue
         self._event = threading.Event()
         self._retrigger_event = threading.Event()
 
@@ -304,7 +326,7 @@ class TimerProxy(object):
             self._trigger_action()
 
     def _trigger_action(self):
-        self._master_to_slave_call_queue.put(self._queue_action_entry)
+        self._parent_to_child_call_queue.put(self._queue_action_entry)
 
 
 #
@@ -318,15 +340,25 @@ class EventButtonProxy(pythics.libproxy.PartialAutoProxy):
         self._event = event
 
     def clear(self):
-        # clear the event to wait for the next signal to stop
-        #   and set the starting time for sleep_interval()
+        """Clear the Event."""
         self._event.clear()
-        self._last_time = time.time()
 
     def is_set(self):
+        """Check and return whether the Event is set. The Event is set when the 
+        button is pressed (when toggle=False) or when the button is toggled to
+        unpressed (when toggle=True).
+        """
         return self._event.is_set()
+        
+    def start_interval(self):
+        """Start the timer used for the firt call to wait_interval()."""
+        self._last_time = time.time()
 
     def wait_interval(self, t):
+        """Wait t seconds since the last call to start_interval() or 
+        wait_interval(). This wait can be interrupted by any action that sets 
+        the Event.
+        """
         # calculate how long we need to wait
         sleep_time = t - (time.time() - self._last_time)
         if sleep_time > 0 :
@@ -337,6 +369,9 @@ class EventButtonProxy(pythics.libproxy.PartialAutoProxy):
         return result
 
     def wait(self, t):
+        """Wait t seconds. This wait can be interrupted by any action that sets 
+        the Event.
+        """
         return self._event.wait(t)
 
 
@@ -358,7 +393,7 @@ class RunButtonProxy(pythics.libproxy.PartialAutoProxy):
         # initialization delayed until proxy is moved to action process so
         #   threading objects are created in the right process
         pythics.libproxy.PartialAutoProxy._start(self, process)
-        self._master_to_slave_call_queue = self._process.master_to_slave_call_queue
+        self._parent_to_child_call_queue = self._process.parent_to_child_call_queue
         self._abort_event = threading.Event()
         self._stop_event = threading.Event()
         self._yield_event = threading.Event()
@@ -438,8 +473,9 @@ class RunButtonProxy(pythics.libproxy.PartialAutoProxy):
 
     def resume(self, update_button_state=True):
         """Request the RunButton to resume running after stop has been pressed 
-        but the run action has not returned. This should be used to abort a stop
-        from within your run action. It will not cancel a kill request."""
+        or abort has been called but the run action has not returned. This 
+        should be used to cancel a stop from within your run action. It will 
+        not cancel a kill request."""
         if self._running:
             if update_button_state:
                 self._call_method_no_return('call_Proxy_method_no_return', self._key, '_set_value', True)
@@ -450,7 +486,7 @@ class RunButtonProxy(pythics.libproxy.PartialAutoProxy):
 
     def _thread_loop(self):
         # run action
-        self._master_to_slave_call_queue.put(self._step_message)
+        self._parent_to_child_call_queue.put(self._step_message)
         while True:
             self._yield_event.wait()
             self._yield_event.clear()
@@ -465,12 +501,12 @@ class RunButtonProxy(pythics.libproxy.PartialAutoProxy):
             if self._stop_event.is_set():
                 break
             # run action
-            self._master_to_slave_call_queue.put(self._step_message)
+            self._parent_to_child_call_queue.put(self._step_message)
 
     def _thread_loop_time_interval(self):
         last_time = time.time()
         # run action
-        self._master_to_slave_call_queue.put(self._step_message)
+        self._parent_to_child_call_queue.put(self._step_message)
         while True:
             self._yield_event.wait()
             self._yield_event.clear()
@@ -490,14 +526,14 @@ class RunButtonProxy(pythics.libproxy.PartialAutoProxy):
                 self.delayed = True
             last_time = time.time()
             # run action
-            self._master_to_slave_call_queue.put(self._step_message)
+            self._parent_to_child_call_queue.put(self._step_message)
 
     def step(self):
         """Take a step. Normally for internal use only."""
         try:
             # get the value returned by yield
             # default to 0.0 if no return value is given
-            interval = self._generator.next() or 0.0
+            interval = next(self._generator) or 0.0
             self._interval_semaphore.acquire()
             self._interval = interval
             self._interval_semaphore.release()
