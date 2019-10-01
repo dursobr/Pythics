@@ -3,13 +3,14 @@
 # Originally in C++, released under GPL v2 or later at 
 #   http://qt-apps.org/content/show.php/QScale?content=148053
 # Ported to Python by Fabian Inostroza, 2014
-# Modified by Brian R. D'Urso, 2014:
+# Modified by Brian R. D'Urso, 2014, 2019:
 #  - fixed Pyside compatibility
 #  - fixed vertical mode functionality
 #  - changed needle color and shape
 #  - added frame and changed default background color
 #  - scattered cleanup
 #  - now released under GPL v3 or later
+#  - ported to python3, PyQt5
 #  - TODO: SetRange only works with integers! FIXED???
 #
 # This file is part of Python Instrument Control System, also known as Pythics.
@@ -28,35 +29,45 @@
 # along with Pythics.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-#from PyQt4 import QtGui, QtCore
+import sys
+from math import pi, isinf, sqrt, asin, ceil, cos, sin
+
 from pythics.settings import _TRY_PYSIDE
 try:
     if not _TRY_PYSIDE:
         raise ImportError()
-    import PySide.QtCore as _QtCore
-    import PySide.QtGui as _QtGui
+    import PySide2.QtCore as _QtCore
+    import PySide2.QtGui as _QtGui
+    import PySide2.QtWidgets as _QtWidgets
+    import PySide2.QtPrintSupport as _QtPrintSupport
     QtCore = _QtCore
     QtGui = _QtGui
+    QtWidgets = _QtWidgets
+    QtPrintSupport = _QtPrintSupport
+    Signal = QtCore.Signal
+    Slot = QtCore.Slot
+    Property = QtCore.Property
     USES_PYSIDE = True
 except ImportError:
-    import sip
-    sip.setapi('QString', 2)
-    sip.setapi('QVariant', 2)
-    import PyQt4.QtCore as _QtCore
-    import PyQt4.QtGui as _QtGui
+    import PyQt5.QtCore as _QtCore
+    import PyQt5.QtGui as _QtGui
+    import PyQt5.QtWidgets as _QtWidgets
+    import PyQt5.QtPrintSupport as _QtPrintSupport
     QtCore = _QtCore
     QtGui = _QtGui
+    QtWidgets = _QtWidgets
+    QtPrintSupport = _QtPrintSupport
+    Signal = QtCore.pyqtSignal
+    Slot = QtCore.pyqtSlot
+    Property = QtCore.pyqtProperty
     USES_PYSIDE = False
 
-import sys
-from math import pi, isinf, sqrt, asin, ceil, cos, sin
 
-
-class QMeter(QtGui.QFrame):
+class QMeter(QtWidgets.QFrame):
     def __init__(self,parent=None):
         super(QMeter,self).__init__(parent)
         self.setAutoFillBackground(True)
-        self.setFrameStyle(QtGui.QFrame.Box)
+        self.setFrameStyle(QtWidgets.QFrame.Box)
         #self.setFrameStyle(QtGui.QFrame.Box|QtGui.QFrame.Plain)
         self.setLineWidth(1)
         self.m_minimum = 0
@@ -80,7 +91,7 @@ class QMeter(QtGui.QFrame):
         self.labelSample = ""
         self.updateLabelSample()
         self.setMinimumSize(80,60)
-        self.setSizePolicy(QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Expanding)
+        self.setSizePolicy(QtWidgets.QSizePolicy.Expanding,QtWidgets.QSizePolicy.Expanding)
         
     # THIS LOOKS WRONG!!!
     def setMinimum(self, max_in):
@@ -258,11 +269,11 @@ class QMeter(QtGui.QFrame):
                                                    
                 painter.rotate(majorStep*angleSpan/(-valueSpan*minorSteps))
                     
-            painter.resetMatrix()
+            painter.resetTransform()
             
         # draw labels
         if self.m_labelsVisible and majorStep != 0:
-            x= range(int(ceil(self.m_minimum/majorStep)), int(self.m_maximum/majorStep)+1)
+            x= list(range(int(ceil(self.m_minimum/majorStep)), int(self.m_maximum/majorStep)+1))
             for i in x:
                 u = pi/180.0*((majorStep*i-self.m_minimum)/float(valueSpan)*angleSpan+angleStart)
                 position = QtCore.QRect()
@@ -275,7 +286,7 @@ class QMeter(QtGui.QFrame):
                     position = QtCore.QRect(0,0,2.0*(center.x()+radius*cos(u)),
                                             center.y()-radius*sin(u))
                 
-                painter.resetMatrix()
+                painter.resetTransform()
                 painter.drawText(position, align, self.m_labelsFormatter.format(float(i*majorStep)))
                                         
         # draw neddle
@@ -301,7 +312,7 @@ class QMeter(QtGui.QFrame):
         self.polygon.append(QtCore.QPoint(0, 2))
 
         painter.drawConvexPolygon(self.polygon)
-        painter.resetMatrix()
+        painter.resetTransform()
         
         # draw cover
         painter.setPen(QtCore.Qt.NoPen)
@@ -352,7 +363,7 @@ if __name__ == '__main__':
             j -= 1
         scale.setValue(j)
         
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     scale = QMeter()
     timer = QtCore.QTimer()
     timer.setInterval(100)

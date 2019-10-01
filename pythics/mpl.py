@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2008 - 2014 Brian R. D'Urso
+# Copyright 2008 - 2019 Brian R. D'Urso
 #
 # This file is part of Python Instrument Control System, also known as Pythics.
 #
@@ -26,31 +26,39 @@ import multiprocessing
 
 import numpy as np
 
-#from PyQt4 import QtCore, QtGui
 from pythics.settings import _TRY_PYSIDE
 try:
     if not _TRY_PYSIDE:
         raise ImportError()
-    import PySide.QtCore as _QtCore
-    import PySide.QtGui as _QtGui
+    import PySide2.QtCore as _QtCore
+    import PySide2.QtGui as _QtGui
+    import PySide2.QtWidgets as _QtWidgets
+    import PySide2.QtPrintSupport as _QtPrintSupport
     QtCore = _QtCore
     QtGui = _QtGui
+    QtWidgets = _QtWidgets
+    QtPrintSupport = _QtPrintSupport
+    Signal = QtCore.Signal
+    Slot = QtCore.Slot
+    Property = QtCore.Property
     USES_PYSIDE = True
 except ImportError:
-    import sip
-    sip.setapi('QString', 2)
-    sip.setapi('QVariant', 2)
-    import PyQt4.QtCore as _QtCore
-    import PyQt4.QtGui as _QtGui
+    import PyQt5.QtCore as _QtCore
+    import PyQt5.QtGui as _QtGui
+    import PyQt5.QtWidgets as _QtWidgets
+    import PyQt5.QtPrintSupport as _QtPrintSupport
     QtCore = _QtCore
     QtGui = _QtGui
+    QtWidgets = _QtWidgets
+    QtPrintSupport = _QtPrintSupport
+    Signal = QtCore.pyqtSignal
+    Slot = QtCore.pyqtSlot
+    Property = QtCore.pyqtProperty
     USES_PYSIDE = False
 
 import matplotlib
-if USES_PYSIDE:
-    matplotlib.rcParams['backend.qt4']='PySide'
-from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as Toolbar
+import matplotlib.figure
+from matplotlib.backends.backend_qt5agg import (FigureCanvas, NavigationToolbar2QT as Toolbar)
 # the following import is necessary for 3-D plots in matplotlib although it is
 #   not directly used
 from mpl_toolkits.mplot3d import Axes3D
@@ -71,7 +79,9 @@ class Canvas(pythics.libcontrol.MPLControl):
 
     - mpl.Canvas.toolbar: The matplotlib Toolbar (NavigationToolbar2QTAgg).
 
-    If you need access to the matplotlib library, use the Import control.
+    If you need access to the matplotlib library, use the use the `import_module` 
+    method of a Main control rather than directly importing the library to allow 
+    the objects to be created in the correct process.
 
     See the examples and matplotlib documentation for details. Configuration
     of the callback functions (if needed) can be done through html parameters
@@ -108,15 +118,15 @@ class Canvas(pythics.libcontrol.MPLControl):
     """
     def __init__(self, parent, toolbar=True, **kwargs):
         pythics.libcontrol.MPLControl.__init__(self, parent, **kwargs)
-
-        self._widget = QtGui.QFrame()
-        vbox = QtGui.QVBoxLayout()
+        self._widget = QtWidgets.QFrame()
+        vbox = QtWidgets.QVBoxLayout()
         # plot
         self.figure = matplotlib.figure.Figure()
         self.canvas = FigureCanvas(self.figure)
         vbox.addWidget(self.canvas)
         # toolbar
         if toolbar:
+            pass
             self.toolbar = Toolbar(self.canvas, self._widget)
             vbox.addWidget(self.toolbar)
         self._mpl_widget = self.canvas
@@ -166,6 +176,7 @@ class Plot2D(pythics.libcontrol.MPLControl):
         self._x_autoscale = True
         self._y_autoscale = True
         self._tight_autoscale = False
+        self._force_rescale = False
         # dictionary of plot objects such as lines, points, etc.
         self._items = dict()
         # use modified matplotlib canvas to redraw correctly on resize
@@ -191,20 +202,23 @@ class Plot2D(pythics.libcontrol.MPLControl):
                                  y_scale='linear',
                                  aspect_ratio='auto',
                                  dpi=150)
-        # should have resize event handler to redraw correctly,
-        # but it doesn't seem to work - instead we use custom plot canvas
-        #self._canvas.mpl_connect('resize_event', self._resize)
+        # handle resize events
+        self._canvas.mpl_connect('resize_event', self._resize)
 
     def _resize(self, event):
+        # Don't use canvas.blit() in here to avoid recursive drawing warnings
         if self._animated:
-            self._full_animated_redraw()
-        else:
+            self._axes.relim()
+            self._axes.autoscale_view(self._tight_autoscale,
+                                     self._x_autoscale, self._y_autoscale)
             self._figure.tight_layout()
-
-    def _redraw(self):
-        # blit entire figure after tab change to eliminate drawing artifacts
-        if self._animated:
-            self._canvas.blit(self._figure.bbox)
+            self._canvas.draw()
+            # update animation background artists
+            self._animated_background = self._canvas.copy_from_bbox(self._axes.bbox)
+            for k in self._animated_artists:
+                self._axes.draw_artist(self._items[k]['mpl_item'])
+        else:
+            self._canvas.draw()
 
     def _update(self, rescale='auto'):
         if self._animated:
@@ -213,7 +227,7 @@ class Plot2D(pythics.libcontrol.MPLControl):
                     self._full_animated_redraw()
                 else:
                     self._fast_animated_redraw()
-            elif rescale == True:
+            elif rescale is True:
                 self._full_animated_redraw()
             else:
                 self._fast_animated_redraw()
@@ -225,14 +239,16 @@ class Plot2D(pythics.libcontrol.MPLControl):
                                              self._x_autoscale, self._y_autoscale)
                     self._figure.tight_layout()
                     self._canvas.draw()
+                    self._force_rescale = False
                 else:
                     self._canvas.draw()
-            elif rescale == True:
+            elif rescale is True:
                 self._axes.relim()
                 self._axes.autoscale_view(self._tight_autoscale,
                                          self._x_autoscale, self._y_autoscale)
                 self._figure.tight_layout()
                 self._canvas.draw()
+                self._force_rescale = False
             else:
                 self._canvas.draw()
 
@@ -256,6 +272,7 @@ class Plot2D(pythics.libcontrol.MPLControl):
             self._axes.draw_artist(self._items[k]['mpl_item'])
         # blit entire canvas to ensure complete update
         self._canvas.blit(self._figure.bbox)
+        self._force_rescale = False
 
     #---------------------------------------------------
     # methods below used only for access by action proxy
@@ -449,6 +466,8 @@ class Plot2D(pythics.libcontrol.MPLControl):
         if key in self._items:
             item = self._items.pop(key)
             item['mpl_item'].remove()
+            if key in self._animated_artists:
+                self._animated_artists.remove(key)
         # create the plot item
         if memory == 'circular':
             data = pythics.lib.CircularArray(cols=2, length=length)
@@ -542,6 +561,8 @@ class Plot2D(pythics.libcontrol.MPLControl):
         if key in self._items:
             item = self._items.pop(key)
             item['mpl_item'].remove()
+            if key in self._animated_artists:
+                self._animated_artists.remove(key)
         # create the plot item
         data = np.array([[0]])
         #if self._polar:
@@ -632,6 +653,8 @@ class Plot2D(pythics.libcontrol.MPLControl):
         if key in self._items:
             item = self._items.pop(key)
             item['mpl_item'].remove()
+            if key in self._animated_artists:
+                self._animated_artists.remove(key)
         # create the plot item
         x_len, y_len = X.shape
         zs = np.zeros((x_len-1, y_len-1))
@@ -671,6 +694,8 @@ class Plot2D(pythics.libcontrol.MPLControl):
             Whether to rescale the plot. If 'auto', then only rescale if needed.
         """
         item = self._items.pop(key)
+        if key in self._animated_artists:
+            self._animated_artists.remove(key)
         item['mpl_item'].remove()
         if redraw:
             self._update(rescale)
@@ -759,36 +784,54 @@ class Plot2D(pythics.libcontrol.MPLControl):
                 item.set_data(data[:,0], data[:,1])
             if redraw:
                 if self._animated:
-                    if rescale or (key not in self._animated_artists):
-                        force_rescale = True
-                    else:
-                        force_rescale = False
+                    if (rescale is True) or (key not in self._animated_artists):
+                        self._force_rescale = True
+                    elif rescale == 'auto':
                         if self._x_autoscale:
                             axis_min, axis_max = self._axes.get_xlim()
                             data_min = data[:,0].min()
                             data_max = data[:,0].max()
                             if (data_min < axis_min) or (data_max > axis_max) or (data_max-data_min < 0.5*(axis_max-axis_min)):
-                                force_rescale = True
+                                self._force_rescale = True
                         if self._y_autoscale:
                             axis_min, axis_max = self._axes.get_ylim()
                             data_min = data[:,1].min()
                             data_max = data[:,1].max()
                             if (data_min < axis_min) or (data_max > axis_max) or (data_max-data_min < 0.5*(axis_max-axis_min)):
-                                force_rescale = True
-                    if force_rescale:
+                                self._force_rescale = True
+                    if self._force_rescale:
                         # full update
                         self._full_animated_redraw()
                     else:
                         # only need to update and blit the axes region
                         self._fast_animated_redraw()
                 else:
-                    if rescale or ((self._x_autoscale or self._y_autoscale) and (rescale == 'auto')):
+                    if (rescale is True) or ((self._x_autoscale or self._y_autoscale) and (rescale == 'auto')):
                         self._axes.relim()
                         self._axes.autoscale_view(self._tight_autoscale, self._x_autoscale, self._y_autoscale)
                         self._figure.tight_layout()
                         self._canvas.draw()
+                        self._force_rescale = False
                     else:
                         self._canvas.draw()
+            else:
+                # just check if we need to rescale, but don't actually redraw
+                if self._animated:
+                    if (rescale is True) or (key not in self._animated_artists):
+                        self._force_rescale = True
+                    elif rescale == 'auto':
+                        if self._x_autoscale:
+                            axis_min, axis_max = self._axes.get_xlim()
+                            data_min = data[:,0].min()
+                            data_max = data[:,0].max()
+                            if (data_min < axis_min) or (data_max > axis_max) or (data_max-data_min < 0.5*(axis_max-axis_min)):
+                                self._force_rescale = True
+                        if self._y_autoscale:
+                            axis_min, axis_max = self._axes.get_ylim()
+                            data_min = data[:,1].min()
+                            data_max = data[:,1].max()
+                            if (data_min < axis_min) or (data_max > axis_max) or (data_max-data_min < 0.5*(axis_max-axis_min)):
+                                self._force_rescale = True
         elif item_value['item_type'] == 'image':
             if data.ndim != 2:
                 raise ValueError("'data' must be a two-dimensional array.")
@@ -876,33 +919,30 @@ class Plot2D(pythics.libcontrol.MPLControl):
                 raise ValueError("Cannot append to curve item with memory == '%s'." % memory)
             if redraw:
                 if self._animated:
-                    if rescale == True or (key not in self._animated_artists):
-                        force_rescale = True
-                    elif rescale == False:
-                        force_rescale = False
+                    if (rescale is True) or (key not in self._animated_artists):
+                        self._force_rescale = True
                     else:
-                        force_rescale = False
                         if self._x_autoscale:
                             if old_data_length < 2:
                                 # there may not have been enough to set the scale before
-                                force_rescale = True
+                                self._force_rescale = True
                             else:
                                 axis_min, axis_max = self._axes.get_xlim()
                                 data_min = data[:,0].min()
                                 data_max = data[:,0].max()
                                 if (data_min < axis_min) or (data_max > axis_max):
-                                    force_rescale = True
+                                    self._force_rescale = True
                         if self._y_autoscale:
                             if old_data_length < 2:
                                 # there may not have been enough to set the scale before
-                                force_rescale = True
+                                self._force_rescale = True
                             else:
                                 axis_min, axis_max = self._axes.get_ylim()
                                 data_min = data[:,1].min()
                                 data_max = data[:,1].max()
                                 if (data_min < axis_min) or (data_max > axis_max):
-                                    force_rescale = True
-                    if force_rescale:
+                                    self._force_rescale = True
+                    if self._force_rescale:
                         # full update
                         self._full_animated_redraw()
                     else:
@@ -915,8 +955,27 @@ class Plot2D(pythics.libcontrol.MPLControl):
                                                  self._x_autoscale, self._y_autoscale)
                         self._figure.tight_layout()
                         self._canvas.draw()
+                        self._force_rescale = False
                     else:
                         self._canvas.draw()
+            else:
+                # just check if we need to rescale, but don't actually redraw
+                if self._animated:
+                    if (rescale is True) or (key not in self._animated_artists):
+                        self._force_rescale = True
+                    else:
+                        if self._x_autoscale:
+                            axis_min, axis_max = self._axes.get_xlim()
+                            data_min = data[:,0].min()
+                            data_max = data[:,0].max()
+                            if (data_min < axis_min) or (data_max > axis_max):# or (data_max-data_min < 0.5*(axis_max-axis_min)):
+                                self._force_rescale = True
+                        if self._y_autoscale:
+                            axis_min, axis_max = self._axes.get_ylim()
+                            data_min = data[:,1].min()
+                            data_max = data[:,1].max()
+                            if (data_min < axis_min) or (data_max > axis_max):# or (data_max-data_min < 0.5*(axis_max-axis_min)):
+                                self._force_rescale = True
         else:
             raise ValueError("Cannot append to plot item type '%s'." % item_value['item_type'])
 
@@ -1067,8 +1126,22 @@ class Plot2D(pythics.libcontrol.MPLControl):
             self._axes.set_ylabel(value)
         if 'x_grid' in kwargs:
             value = kwargs.pop('x_grid')
+            self._axes.xaxis.grid(value)
         if 'y_grid' in kwargs:
             value = kwargs.pop('y_grid')
+            self._axes.yaxis.grid(value)
+        if 'x_ticks' in kwargs:
+            value = kwargs.pop('x_ticks')
+            self._axes.set_xticks(value)
+            if 'x_ticks_label' in kwargs:
+                value = kwargs.pop('x_ticks_label')
+                self._axes.xaxis.set_ticklabels(value)
+        if 'y_ticks' in kwargs:
+            value = kwargs.pop('y_ticks')
+            self._axes.set_yticks(value)
+            if 'y_ticks_label' in kwargs:
+                value = kwargs.pop('y_ticks_label')
+                self._axes.yaxis.set_ticklabels(value)
         if 'dpi' in kwargs:
             self._plot_properties['dpi'] = kwargs.pop('dpi')
         if len(kwargs) != 0:
@@ -1092,7 +1165,7 @@ class Plot2D(pythics.libcontrol.MPLControl):
         """
         if filename is None:
             filetypes = self._canvas.get_supported_filetypes_grouped()
-            sorted_filetypes = filetypes.items()
+            sorted_filetypes = list(filetypes.items())
             sorted_filetypes.sort()
             default_filetype = self._canvas.get_default_filetype()
             start = "image." + default_filetype
@@ -1105,9 +1178,8 @@ class Plot2D(pythics.libcontrol.MPLControl):
                     selected_filter = filter
                 filters.append(filter)
             filters = ';;'.join(filters)
-            filename = QtGui.QFileDialog.getSaveFileName(None, 'Save Plot Image',
-                                                         start, filters,
-                                                         selected_filter)
+            filename = QtWidgets.QFileDialog.getSaveFileName(None, 'Save Plot Image', start, 
+                                             filters, selected_filter)[0]
         if filename:
             try:
                 if self._animated:
@@ -1116,7 +1188,7 @@ class Plot2D(pythics.libcontrol.MPLControl):
                         item.set_animated(False)
                     self._animated = False
                     self._update(rescale)
-                    self._canvas.print_figure(unicode(filename),
+                    self._canvas.print_figure(str(filename),
                                              bbox_inches='tight',
                                              dpi=self._plot_properties['dpi'])
                     for k in self._animated_artists:
@@ -1124,13 +1196,13 @@ class Plot2D(pythics.libcontrol.MPLControl):
                         item.set_animated(True)
                     self._animated = True
                 else:
-                    self._canvas.print_figure(unicode(filename),
+                    self._canvas.print_figure(str(filename),
                                              bbox_inches='tight',
                                              dpi=self._plot_properties['dpi'])
-            except Exception, e:
-                QtGui.QMessageBox.critical(
+            except Exception as e:
+                QtWidgets.QMessageBox.critical(
                     None, "Error saving file", str(e),
-                    QtGui.QMessageBox.Ok, QtGui.QMessageBox.NoButton)
+                    QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.NoButton)
 
 
 #
@@ -1191,7 +1263,7 @@ class Chart2D(pythics.libcontrol.MPLControl):
         pythics.libcontrol.MPLControl.__init__(self, parent, **kwargs)
         # initialize parameters that only depend on the number of plots
         self._n_plots = plots
-        self._n_plot_range = range(self._n_plots)
+        self._n_plot_range = list(range(self._n_plots))
         self._memory = memory
         self._history_length = length
         self._fast_scroll = fast_scroll
@@ -1199,33 +1271,33 @@ class Chart2D(pythics.libcontrol.MPLControl):
         self._span = self._requested_span
         self._span_choice = 'autoscale span'
         # setup the layout and plot widget
-        self._widget = QtGui.QFrame()
-        self._sizer = QtGui.QVBoxLayout()
+        self._widget = QtWidgets.QFrame()
+        self._sizer = QtWidgets.QVBoxLayout()
         self._figure = matplotlib.figure.Figure()
         self._canvas = PythicsMPLCanvas(self, self._figure)
         self._sizer.addWidget(self._canvas)
         self._mpl_widget = self._canvas
         # row of controls below the plot
-        self._row_sizer = QtGui.QHBoxLayout()
+        self._row_sizer = QtWidgets.QHBoxLayout()
         self._sizer.addLayout(self._row_sizer)
         # set up scoll bar
         self._scroll_to_end = True
         self._pressed = False
-        self._scrollbar = QtGui.QScrollBar(QtCore.Qt.Horizontal)
+        self._scrollbar = QtWidgets.QScrollBar(QtCore.Qt.Horizontal)
         self._scrollbar.setTracking(True)
         self._row_sizer.addWidget(self._scrollbar)
         self._scrollbar.valueChanged.connect(self._scroll)
         self._scrollbar.sliderPressed.connect(self._pressed_start)
         self._scrollbar.sliderReleased.connect(self._pressed_end)
         # choice of autoscale or fixed span
-        self._choice_widget = QtGui.QComboBox()
+        self._choice_widget = QtWidgets.QComboBox()
         self._choice_widget.insertItem(2, 'autoscale span')
         self._choice_widget.insertItem(2, 'fixed span')
         self._choice_widget.setFixedWidth(150)
         self._choice_widget.activated.connect(self._change_span_choice)
         self._row_sizer.addWidget(self._choice_widget)
         # box to hold fixed span
-        self._span_widget = QtGui.QSpinBox()
+        self._span_widget = QtWidgets.QSpinBox()
         self._span_widget.setSingleStep(1)
         self._span_widget.setMinimum(2)
         self._span_widget.setMaximum(self._history_length)
@@ -1257,12 +1329,11 @@ class Chart2D(pythics.libcontrol.MPLControl):
         self._fast_requested = False
         self._fast = False
         self.clear()
-        # should have resize event handler to redraw correctly,
-        # but it doesn't seem to work - instead we use custom plot canvas
-        #self._canvas.mpl_connect('resize_event', self.on_resize)
+        # need to update plot on resize
+        self._canvas.mpl_connect('resize_event', self._resize)
 
     def _change_span(self, *args):
-        self._requested_span = long(self._span_widget.value())
+        self._requested_span = int(self._span_widget.value())
         if self._span_choice == 'fixed span':
             self._set_span(self._requested_span)
 
@@ -1283,6 +1354,7 @@ class Chart2D(pythics.libcontrol.MPLControl):
         self._update_plot()
 
     def _resize(self, event):
+        # Don't use canvas.blit() in here to avoid recursive drawing warnings
         if self._fast:
             self._canvas.draw()
             self._animated_background = self._canvas.copy_from_bbox(self._figure.bbox)
@@ -1291,15 +1363,15 @@ class Chart2D(pythics.libcontrol.MPLControl):
                 for j in range(self._n_curves_per_plot[i]):
                     self._plot_axes[i].draw_artist(self.curves[k])
                     k += 1
-            # blit entire canvas to ensure complete update
-            self._canvas.blit(self._figure.bbox)
         else:
-            self._full_redraw()
-
-    def _redraw(self):
-        # blit entire figure after tab change to eliminate drawing artifacts
-        self._canvas.blit(self._figure.bbox)
-
+            self._figure.tight_layout()
+            self._canvas.draw()
+            k = 0
+            for i in range(self._n_plots):
+                for j in range(self._n_curves_per_plot[i]):
+                    self._plot_axes[i].draw_artist(self.curves[k])
+                    k += 1
+        
     def _scroll(self):
         self._scroll_position = self._scrollbar.value()
         self._update_plot()
@@ -1338,6 +1410,8 @@ class Chart2D(pythics.libcontrol.MPLControl):
             axes = self._plot_axes[i]
             axes.relim()
             axes.autoscale_view(True, True, self._y_autoscales[i])
+            # Eliminate margnins in x, should add this to properties?
+            axes.margins(x=0.0)            
         if self._fast:
             self._fast_redraw()
         else:
@@ -1658,7 +1732,7 @@ class Chart2D(pythics.libcontrol.MPLControl):
         """
         if filename is None:
             filetypes = self._canvas.get_supported_filetypes_grouped()
-            sorted_filetypes = filetypes.items()
+            sorted_filetypes = list(filetypes.items())
             sorted_filetypes.sort()
             default_filetype = self._canvas.get_default_filetype()
             start = "image." + default_filetype
@@ -1671,25 +1745,24 @@ class Chart2D(pythics.libcontrol.MPLControl):
                     selected_filter = filter
                 filters.append(filter)
             filters = ';;'.join(filters)
-            filename = QtGui.QFileDialog.getSaveFileName(None, 'Save Plot Image',
-                                                         start, filters,
-                                                         selected_filter)
+            filename = QtWidgets.QFileDialog.getSaveFileName(None, 'Save Plot Image', start, 
+                                             filters, selected_filter)[0]
         if filename:
             try:
                 for item in self.curves:
                     item.set_animated(False)
                 self._animated = False
                 self._canvas.draw()
-                self._canvas.print_figure(unicode(filename),
+                self._canvas.print_figure(str(filename),
                                          bbox_inches='tight',
                                          dpi=self.dpi)
                 for item in self.curves:
                     item.set_animated(True)
                 self._animated = True
-            except Exception, e:
-                QtGui.QMessageBox.critical(
+            except Exception as e:
+                QtWidgets.QMessageBox.critical(
                     None, "Error saving file", str(e),
-                    QtGui.QMessageBox.Ok, QtGui.QMessageBox.NoButton)
+                    QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.NoButton)
 
 
 class PythicsMPLCanvas(FigureCanvas):
@@ -1701,12 +1774,14 @@ class PythicsMPLCanvas(FigureCanvas):
         self.customContextMenuRequested.connect(self._popup)
 
     def _popup(self, pos):
-        menu = QtGui.QMenu()
+        menu = QtWidgets.QMenu()
         save_action = menu.addAction('Save...')
         action = menu.exec_(self.mapToGlobal(pos))
         if action == save_action:
             self._pythics_control.save_figure()
-
-    def resizeEvent(self, event):
-        FigureCanvas.resizeEvent(self, event)
-        self._pythics_control._resize(event)
+            
+    def draw_idle(self, *args, **kwargs):
+        # Block these calls to avoid redraws missing actors when
+        #  resizing with animated actors. Blocking does not cause problems
+        #  if resize is handled correctly.
+        pass

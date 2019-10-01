@@ -18,9 +18,26 @@
 #  along with Pythics.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+#
+# load libraries
+#
+import logging
 import numpy as np
 
-def initialize_shell(shell, **kwargs):
+
+# setup the logger
+logger = logging.getLogger('log')
+#logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
+
+
+def initialize(shell, **kwargs):
+    # setup the logger
+    sh = logging.StreamHandler(kwargs['messages'])
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    sh.setFormatter(formatter)
+    logger.addHandler(sh)
+    # setup the python shell
     shell.interact(kwargs.copy())
     clear(**kwargs)
 
@@ -42,7 +59,7 @@ def clear(plot_1, messages, **kwargs):
 def run(laplace_Nx, laplace_Ny, laplace_tolerance, laplace_over_relaxation,
         laplace_source_1_x, laplace_source_1_y, laplace_source_1_value,
         laplace_source_2_x, laplace_source_2_y, laplace_source_2_value,
-        stop, messages, plot_1, **kwargs):
+        stop, plot_1, **kwargs):
     tolerance = laplace_tolerance.value
     ovr = laplace_over_relaxation.value
     source_1_x = laplace_source_1_x.value
@@ -51,7 +68,7 @@ def run(laplace_Nx, laplace_Ny, laplace_tolerance, laplace_over_relaxation,
     source_2_x = laplace_source_2_x.value
     source_2_y = laplace_source_2_y.value
     source_2_value = laplace_source_2_value.value
-    messages.write('\n=== LAPLACE =========================\n')
+    logger.info('starting calculation')
     plot_1.set_plot_properties(
         title='Temperature Distribution',
         x_label='x',
@@ -88,5 +105,5 @@ def run(laplace_Nx, laplace_Ny, laplace_tolerance, laplace_over_relaxation,
             break
     # reset the stop button in case it was pushed
     stop.value = False
-    messages.write('Number of iterations: %d.\n' % n)
-    messages.write('Done.\n')
+    logger.info('number of iterations: %d' % n)
+    logger.info('done')

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?><!--  
-Copyright 2012 - 2014 Brian R. D'Urso
+Copyright 2012 - 2019 Brian R. D'Urso
 
 This file is part of Python Instrument Control System, also known as Pythics. 
 
@@ -86,16 +86,12 @@ Pythics is distributed in the hope that it will be useful, but WITHOUT ANY WARRA
     <object classid="Shell" height="200" id="shell" width="100%">
         </object>
     
-    
-    <object classid="ScriptLoader" width="0%">
-      <param name="filename" value="integration_simulator"/>
-      <param name="actions" value="{'initialized': 'integration_simulator.initialize'}"/>
-    </object>
-    
     <br/>
     
-    <object classid="ParameterLoader" width="0%">
-      <param name="filename" value="integration_simulator_defaults.txt"/>
+    <object classid="Main" id="main" width="0%">
+      <param name="python_filename" value="integration_simulator"/>
+      <param name="parameters_filename" value="integration_simulator_defaults.txt"/>
+      <param name="actions" value="{'initialized': 'integration_simulator.initialize'}"/>
     </object>
     
   </body>

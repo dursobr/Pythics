@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?><!--  
-Copyright 2012 - 2014 Brian R. D'Urso
+Copyright 2012 - 2019 Brian R. D'Urso
 
 This file is part of Python Instrument Control System, also known as Pythics. 
 
@@ -113,22 +113,21 @@ Pythics is distributed in the hope that it will be useful, but WITHOUT ANY WARRA
     <hr/>
     
     <object classid="TextIOBox" height="100" id="messages" width="100%">
-        </object>
+       <param name='logging' value='True'/>
+       <param name='save' value='False'/>
+    </object>
     
     <hr/>
     
     <object classid="Shell" height="200" id="shell" width="100%">
-      <param name="actions" value="{'initialized': 'laplace.initialize_shell'}"/>
+      <param name="actions" value="{'initialized': 'laplace.initialize'}"/>
     </object>
     
     <br/>
     
-    <object classid="ScriptLoader" width="0%">
-      <param name="filename" value="laplace"/>
-    </object>
-    
-    <object classid="ParameterLoader" width="0%">
-      <param name="filename" value="laplace_defaults.txt"/>
+    <object classid="Main" id="main" width="0%">
+      <param name="python_filename" value="laplace"/>
+      <param name="parameters_filename" value="laplace_defaults.txt"/>
     </object>
     
   </body>

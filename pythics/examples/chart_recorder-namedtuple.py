@@ -31,7 +31,7 @@ from pythics.lib import GrowableArray
 
 def kwargs_to_namedtuple(func):
     def wrapper(**kwargs):
-        controls = namedtuple('Controls', kwargs.keys())(**kwargs)
+        controls = namedtuple('Controls', list(kwargs.keys()))(**kwargs)
         return func(controls)
     return wrapper
 

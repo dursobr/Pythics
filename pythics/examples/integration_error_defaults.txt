@@ -1,15 +1,28 @@
 (dp0
-S'N_multiplier'
+Vmain
 p1
-F1.2
-sS'N_max'
+NsVplot
 p2
-L4000000L
-sS'N_min'
+NsVN_multiplier
 p3
-L3L
-sS'algorithm'
+F2.0
+sVstop
 p4
-S'trapezoid rule'
+I00
+sVN_max
 p5
+L90000000L
+sValgorithm
+p6
+Vtrapezoid rule
+p7
+sVshell
+p8
+NsVmessages
+p9
+V
+p10
+sVN_min
+p11
+L10L
 s.

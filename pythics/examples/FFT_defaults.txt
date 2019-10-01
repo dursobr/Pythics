@@ -1,15 +1,30 @@
 (dp0
-S'function'
+Vplot_1
 p1
-S'np.sin(2*math.pi*t) + np.cos(127.5*2*math.pi*t)'
+NsVplot_2
 p2
-sS'range_max'
+NsVrange_max
 p3
 F1.0
-sS'N'
+sVN
 p4
 L256L
-sS'range_min'
+sVstop
 p5
+I00
+sVmain
+p6
+NsVfunction
+p7
+Vnp.sin(2*math.pi*t) + np.cos(127.5*2*math.pi*t)
+p8
+sVmessages
+p9
+V
+p10
+sVshell
+p11
+NsVrange_min
+p12
 F0.0
 s.

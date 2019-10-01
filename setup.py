@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-#  Copyright 2010 - 2015 Brian R. D'Urso
+#  Copyright 2010 - 2019 Brian R. D'Urso
 #
 #  This file is part of Python Instrument Control System, also known as Pythics.
 #
@@ -21,7 +21,7 @@
 
 #
 # The module can be installed by typing
-#   python setup.py install
+#   python3 setup.py install
 #
 # Relevant files:
 #   setup.py        - controls the whole build
@@ -31,16 +31,16 @@
 #   http://docs.python.org/distutils/index.html
 #
 # Make the source package with:
-#   python setup.py sdist
+#   python3 setup.py sdist
 #
 # Make the windows exe with:
-#   python setup.py bdist_wininst --user-access-control='force'
+#   python3 setup.py bdist_wininst --user-access-control='force'
 #
 
 from distutils.core import setup
 
 setup(name='pythics',
-        version='0.7.3',
+        version='1.0.0',
         description='Python Instrument Control System',
         author='Brian R. D\'Urso',
         author_email='dursobr@gmail.com',
@@ -54,14 +54,14 @@ setup(name='pythics',
                       'pythics.schema':['*.xsd', '*.xml']},
         scripts=['scripts/postinstall.py'],
         classifiers=[
-            'Development Status :: 3 - Alpha',
+            'Development Status :: 4 - Beta',
             'Intended Audience :: Science/Research',
             'Intended Audience :: Developers',
             'License :: OSI Approved :: GNU General Public License (GPL)',
             'Operating System :: MacOS :: MacOS X',
             'Operating System :: Microsoft :: Windows',
             'Operating System :: POSIX',
-            'Programming Language :: Python',
+            'Programming Language :: Python :: 3',
             'Topic :: Scientific/Engineering',
             'Topic :: Software Development',
         ],

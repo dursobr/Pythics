@@ -1,4 +1,0 @@
-include README.txt INSTALL.txt COPYING.txt CHANGES.txt MANIFEST.in Pythics.pdf
-recursive-include doc * 
-recursive-include examples * 
-include pythics/pythics_icon.ico

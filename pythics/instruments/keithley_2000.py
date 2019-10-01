@@ -131,7 +131,7 @@ class Keithley2000(visa.GpibInstrument):
             self.write(':trace:feed:control next')
             self.write(':initiate')            
             v = v.split(',')
-            v = map(float, v)
+            v = list(map(float, v))
             return v
         else:
             v = self.ask('fetch?')

@@ -10,15 +10,18 @@ interfere with the functionality of the GUI. Pythics attempts to robustly
 handle all of the complex details of writing a program with a GUI for you, 
 allowing you to concentrate on the functionality of your program.
 
+This is the first major public release of Pythics for several years, with
+updates from the last public release including a port to Python3, Qt5, and 
+Matplotlib 3. Almost all user code will have to be updated to be used with this
+new version of Pythics, both because of the new Python version and the new 
+consolidated Main control.
+
 
 Documentation:
 --------------
-The documentation is located in the pythics doc directory. The documentation 
-was built with Sphinx, and can be accessed in html or pdf form.
-The pdf manual is located in the pythics directory as:
-Pythics.pdf
-The html docs can be read with a browser by opening:
-doc/_build/html/index.html 
+The documentation and many examples are built in to pythics under the help 
+menu. The code used to generate the help is in the pythics/help directory,
+and many further examples are in pythics/examples.
 
 
 Notes:
@@ -29,9 +32,9 @@ and numpy http://www.numpy.org/.
 
 Contributors:
 -------------
-Thomas Fechner, who added command-line lauching of Pythics.
+Thomas Fechner, who added command-line launching of Pythics.
 Ilana Gat, who contributed several feature enhancements.
-Alex Arsenovic, who wrote the initial Distutils intaller setup for Pythics.
+Alex Arsenovic, who wrote the initial Distutils installer setup for Pythics.
 Richard Graham, who reorganized and greatly improved the docs.
 
 
@@ -40,10 +43,9 @@ Installation Requirements
 
 The following programs and libraries are required for Pythics to run:
 
-- Python 2.6.2 or later preferred; earlier versions lack the 
-  multiprocessing package
+- Python 3.x.
 
-- PyQt widget toolkit for GUI, version 4.5.4 or later
+- PyQt5 or PySide2 widget toolkit for GUI.
 
 
 The following libraries are strongly recommended for basic functionality in 
@@ -51,15 +53,9 @@ Pythics:
 
 - NumPy array support
 
-- matplotlib plotting library
+- matplotlib (3.0.x or later) plotting library.
 
-
-The following libraries are optional for full functionality in Pythics:
-
-- python Imaging Library (PIL) - for image display support, (1.1.7 or later 
-  preferred)
-
-- PyQwt widgets for scientific and engineering applications  
+- lxml for better XML error reporting.
 
 
 The following additional packages may be helpful for writing scientific code 
@@ -86,7 +82,7 @@ source distribution (.tar.gz or .zip):
 
 - Unpack the archive file.
 
-- run `python setup.py install`
+- run `python3 setup.py install`
 
 
 Running
@@ -95,7 +91,7 @@ Running
 To start Pythics:
 
 - On Linux, go to the `pythics/pythics` directory and type 
-  `python start.py`.
+  `python3 start.py`.
 
 - On Windows, double-click on the shortcut created on your desktop by the 
   installer or go to the `pythics/pythics` directory and double-click on 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-#  Copyright 2012 - 2014 Brian R. D'Urso
+#  Copyright 2012 - 2019 Brian R. D'Urso
 #
 #  This file is part of Python Instrument Control System, also known as Pythics.
 #
@@ -21,6 +21,9 @@
 #
 # load libraries
 #
+import logging
+import time
+
 import numpy as np
 
 from pythics.lib import GrowableArray
@@ -38,91 +41,106 @@ private = Private()
 #
 # functions
 #
-def initialize(data_chart, **kwargs):
+def initialize(log_text_box, data_chart, **kwargs):
+    # setup the logger and log display box
+    # examples of how to use:
+    #    private.logger.debug('this is a debug message')
+    #    private.logger.info('this is an info message')
+    #    private.logger.warning('this is a warning message')
+    #    private.logger.error('this is an error message')
+    #    private.logger.critical('this is a critical error message')
+    #    private.logger.exception('this is an exception')
+    private.logger = logging.getLogger('log')
+    #private.logger.setLevel(logging.DEBUG)
+    private.logger.setLevel(logging.INFO)
+    sh = logging.StreamHandler(log_text_box)
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    sh.setFormatter(formatter)
+    private.logger.addHandler(sh)
     # store data in a GrawableArray so we can efficiently append to it
-    private.data = GrowableArray(cols=5, length=1000)
+    private.data = GrowableArray(cols=2, length=1000)
     # setup the plot
-    data_chart.curves_per_plot = [1, 1, 2]
-    data_chart.set_plot_properties(0, title='Recorded Voltages', y_label='V1 (V)')
-    data_chart.set_plot_properties(1, y_label='V2 (V)')
-    data_chart.set_plot_properties(2, x_label='time (s)', y_label='V3 and V4 (V)')
+    data_chart.curves_per_plot = [1]
+    data_chart.set_plot_properties(0, title='Recorded Voltages', x_label='time (s)', y_label='$V_1$ (V)')
     data_chart.set_curve_properties(0, line_color='red', line_width=2)
-    data_chart.set_curve_properties(1, line_color='green', line_width=2)
-    data_chart.set_curve_properties(2, line_color='orange', line_width=1)
-    data_chart.set_curve_properties(3, line_color='blue', line_width=1)
+    private.logger.debug('initialize complete')
 
 
-def open_close_instruments(open_close, start_stop, error_dialog, **kwargs):
-    # use this for setting up hardware, if needed
-    if open_close.value:
-        # open instruments
-        pass
-    else:
-        # check that we are not running before closing instruments
-        if start_stop.value:
-            error_dialog.message = 'Stop before closing instruments.'
-            error_dialog.open()
-            open_close.value = True
+def open_close_instruments(main, open_close, start_stop, **kwargs):
+    try:
+        # use this for setting up hardware, if needed
+        if open_close.value:
+            private.logger.debug('opening instruments')
+            # open instruments
+            pass
+            private.logger.info('instruments opened')
+        else:
+            # check that we are not running before closing instruments
+            if start_stop.value:
+                main.open_message_dialog('Error', 'Stop before closing instruments.', severity='critical')
+                open_close.value = True
+                return
+            private.logger.debug('closing instruments')
+            # close instruments
+            pass
+            private.logger.info('instruments closed')
+    except:
+        private.logger.exception('execution stopped due to an exception')
+
+
+def run(main, time_display, voltage_1_display, data_chart, dwell_time, 
+        start_stop, open_close, **kwargs):
+    try:
+        # check that the instruments are open before starting
+        if not open_close.value:
+            main.open_message_dialog('Error', 'Open instruments before starting.', severity='critical')
             return
-        # close instruments
-        pass
-
-
-def run(voltage_1, voltage_2, voltage_3, voltage_4, data_chart, dwell_time, 
-        start_stop, error_dialog, open_close, **kwargs):
-    # check that the instruments are open before starting
-    if not open_close.value:
-        error_dialog.message = 'Open instruments before starting.'
-        error_dialog.open()
-        return
-    private.data.clear()
-    data_chart.clear_data()
-    if dwell_time.value < 0.1:
-        # use fast plotting (hidden axes) for data taken faster than 10 Hz
-        #  you may want to change this depending on the speed of your computer
-        data_chart.fast = True
-    t = 0.0
-    while(start_stop.value):
-        # read and show voltages
-        new_y1 = 5*np.random.rand()
-        new_y2 = 4*np.random.rand()
-        new_y3 = 2*np.random.rand()
-        new_y4 = 3*np.random.rand()
-        voltage_1.value = new_y1
-        voltage_2.value = new_y2
-        voltage_3.value = new_y3
-        voltage_4.value = new_y4
-        new_data = np.array([t, new_y1, new_y2, new_y3, new_y4])
-        private.data.append(new_data)
-        data_chart.append_data(new_data)
-        dt = dwell_time.value
-        t += dt
-        yield dt
-    # turn axes drawing back on
-    data_chart.fast = False
+        private.logger.info('starting data acquisition')
+        private.data.clear()
+        data_chart.clear_data()
+        if dwell_time.value < 0.01:
+            # use fast plotting (hidden axes) for data taken faster than 10 Hz
+            #  you may want to change this depending on the speed of your computer
+            data_chart.fast = True
+        t0 = time.time()
+        while(start_stop.value):
+            private.logger.debug('acquiring data')
+            # read and show voltages
+            new_t = time.time() - t0
+            time_display.value = new_t
+            new_y1 = 5*np.random.rand()
+            voltage_1_display.value = new_y1
+            new_data = np.array([new_t, new_y1])
+            private.data.append(new_data)
+            data_chart.append_data(new_data)
+            yield dwell_time.value
+        private.logger.info('stopping data acquisition')
+        # turn axes drawing back on
+        data_chart.fast = False
+    except:
+        private.logger.exception('execution stopped due to an exception')
     
 
-def save_data(data_filename, **kwargs):
-    np.savetxt(data_filename.value, private.data, 
-                  fmt='%.18e', 
-                  delimiter=' ', 
-                  newline='\n', 
-                  header='x y1 y2 y3 y4', 
-                  footer='', 
-                  comments='# ')
+def save_data(save_data_filename, **kwargs):
+    try:
+        np.savetxt(save_data_filename.value, private.data, 
+                      fmt='%.18e', 
+                      delimiter=' ', 
+                      newline='\n', 
+                      header='t V_1', 
+                      footer='', 
+                      comments='# ')
+    except:
+        private.logger.exception('save stopped due to an exception')
 
 
-def load_data(data_chart, data_filename, **kwargs):
-    a = np.loadtxt(data_filename.value, 
-                   dtype='float', 
-                   comments='#', 
-                   ndmin=2)
-    private.data.clear()
-    private.data.append(a)
-    data_chart.set_data(private.data)
-
-
-def terminate(**kwargs):
-    # called when the vi is closed
-    pass
-    
+def load_data(data_chart, load_data_filename, **kwargs):
+    try:
+        a = np.loadtxt(load_data_filename.value,
+                       dtype='float',
+                       comments='#', ndmin=2)
+        private.data.clear()
+        private.data.append(a)
+        data_chart.set_data(private.data)
+    except:
+        private.logger.exception('load stopped due to an exception')

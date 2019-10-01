@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright 2008 - 2015 Brian R. D'Urso
+# Copyright 2008 - 2019 Brian R. D'Urso
 #
 # This file is part of Python Instrument Control System, also known as Pythics.
 #
@@ -30,30 +30,39 @@ import multiprocessing
 import pickle
 import sys, traceback
 
-#from PyQt4 import QtGui
 from pythics.settings import _TRY_PYSIDE
 try:
     if not _TRY_PYSIDE:
         raise ImportError()
-    import PySide.QtCore as _QtCore
-    import PySide.QtGui as _QtGui
+    import PySide2.QtCore as _QtCore
+    import PySide2.QtGui as _QtGui
+    import PySide2.QtWidgets as _QtWidgets
+    import PySide2.QtPrintSupport as _QtPrintSupport
     QtCore = _QtCore
     QtGui = _QtGui
+    QtWidgets = _QtWidgets
+    QtPrintSupport = _QtPrintSupport
+    Signal = QtCore.Signal
+    Slot = QtCore.Slot
+    Property = QtCore.Property
     USES_PYSIDE = True
 except ImportError:
-    import sip
-    sip.setapi('QString', 2)
-    sip.setapi('QVariant', 2)
-    import PyQt4.QtCore as _QtCore
-    import PyQt4.QtGui as _QtGui
+    import PyQt5.QtCore as _QtCore
+    import PyQt5.QtGui as _QtGui
+    import PyQt5.QtWidgets as _QtWidgets
+    import PyQt5.QtPrintSupport as _QtPrintSupport
     QtCore = _QtCore
     QtGui = _QtGui
+    QtWidgets = _QtWidgets
+    QtPrintSupport = _QtPrintSupport
+    Signal = QtCore.pyqtSignal
+    Slot = QtCore.pyqtSlot
+    Property = QtCore.pyqtProperty
     USES_PYSIDE = False
-
 
 import pythics.html
 import pythics.libcontrol
-import pythics.master
+import pythics.parent
 
 
 #
@@ -61,18 +70,22 @@ import pythics.master
 #   one for the whole application
 #   parent of all TabFrame instances
 #
-class MainWindow(QtGui.QMainWindow):
-    def __init__(self, master, app, parent=None, fixed_tabs=False):
+class MainWindow(QtWidgets.QMainWindow):
+    def __init__(self, parent_process, app, parent=None, compact=False):
         super(MainWindow, self).__init__(parent)
         # pythics data
-        self.master = master
+        self.parent_process = parent_process
         self.app = app
-        self.fixed_tabs = fixed_tabs
+        self.compact = compact
+        self.fixed_tabs = compact
         self.workspace = ''
+        self.shutdown_on_exit = False
         # setup window basics
-        self.resize(900, 560)
+        #self.resize(900, 560)
+        # match raspberry pi touchscreen size
+        self.resize(800, 480)
         self.setWindowTitle('Pythics')
-        self.clipboard = QtGui.QApplication.clipboard()
+        self.clipboard = QtWidgets.QApplication.clipboard()
         # set the corner icon
         icon = QtGui.QIcon(os.path.join(sys.path[0], 'pythics_icon.ico'))
         self.setWindowIcon(icon)
@@ -83,23 +96,20 @@ class MainWindow(QtGui.QMainWindow):
         # add the status bar
         self.new_status_bar()
         # for printing later
-        # high resolution printer give error when printing:
-        #   QPainter::begin: Paint device returned engine == 0, type: 2
-        #self.printer = QtGui.QPrinter(QtGui.QPrinter.HighResolution)
-        self.printer = QtGui.QPrinter()
+        self.printer = QtPrintSupport.QPrinter()
 
     def confirm_exit(self):
-        reply = QtGui.QMessageBox.question(self, 'Confirm',
-            'Are you sure you want to exit?', QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
-        if reply == QtGui.QMessageBox.Yes:
+        reply = QtWidgets.QMessageBox.question(self, 'Confirm',
+            'Are you sure you want to exit?', QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No)
+        if reply == QtWidgets.QMessageBox.Yes:
             return True
         else:
             return False
 
     def confirm_close(self):
-        reply = QtGui.QMessageBox.question(self, 'Confirm',
-            'Are you sure you want to close the VI?', QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
-        if reply == QtGui.QMessageBox.Yes:
+        reply = QtWidgets.QMessageBox.question(self, 'Confirm',
+            'Are you sure you want to close the app?', QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No)
+        if reply == QtWidgets.QMessageBox.Yes:
             return True
         else:
             return False
@@ -113,14 +123,16 @@ class MainWindow(QtGui.QMainWindow):
             event.ignore()
 
     def new_status_bar(self):
-        self.status_text = QtGui.QLabel('')
-        self.statusBar().addWidget(self.status_text, 1)
+        if not self.compact:
+            self.status_text = QtWidgets.QLabel('')
+            self.statusBar().addWidget(self.status_text, 1)
 
     def set_status_text(self, value):
-        self.status_text.setText(value)
+        if not self.compact:
+            self.status_text.setText(value)
 
     def new_tab_frame(self):
-        self.tab_frame = QtGui.QTabWidget()
+        self.tab_frame = QtWidgets.QTabWidget()
         self.tab_frame.setDocumentMode(True)
         self.tab_frame.setTabsClosable(not self.fixed_tabs)
         self.tab_frame.setMovable(not self.fixed_tabs)
@@ -147,16 +159,13 @@ class MainWindow(QtGui.QMainWindow):
             self.disable_menu_items()
 
     def get_open_filename(self, name_filter='*.*', directory='', title='Select a file to open'):
-        filename = QtGui.QFileDialog.getOpenFileName(self, title, directory, name_filter)
-        if USES_PYSIDE:
-            # PySide returns a tuple instead of just a string
-            filename = filename[0]
+        filename = QtWidgets.QFileDialog.getOpenFileName(self, title, directory, name_filter)[0]
         if filename == '':
             raise IOError('No file selected.')
         return filename
 
     def get_save_filename(self, name_filter='*.*', directory='', title='Select a filename for saving'):
-        filename = QtGui.QFileDialog.getSaveFileName(self, title, directory, name_filter)
+        filename = QtWidgets.QFileDialog.getSaveFileName(self, title, directory, name_filter)[0]
         if filename == '':
             raise IOError('No filename selected.')
         return filename
@@ -177,13 +186,13 @@ class MainWindow(QtGui.QMainWindow):
         # File menu
         self.file_menu = self.add_menu('&File')
         self.add_menu_item('&Open...', self.menu_open, 'Ctrl+O',
-                            'Open a vi file.')
+                            'Open an app file.')
         self.add_menu_item('&Close', self.menu_close, 'Ctrl+W',
-                            'Close the current vi.')
+                            'Close the current app.')
         self.add_menu_item('Close All', self.menu_close_all, 0,
                             'Close all open files.')
         self.add_menu_item('&Reload', self.menu_reload, 'Ctrl+R',
-                            'Reload the vi.')
+                            'Reload the app.')
         self.add_menu_seperator()
         self.add_menu_item('Open Workspace...', self.menu_open_workspace, 0,
                             'Open a group of files (a workspace).')
@@ -278,7 +287,6 @@ class MainWindow(QtGui.QMainWindow):
             pass
         else:
             self.open_html_file(filename)
-            self.enable_menu_items()
 
     def menu_close(self):
         if self.confirm_close():
@@ -288,9 +296,9 @@ class MainWindow(QtGui.QMainWindow):
                 self.disable_menu_items()
 
     def menu_close_all(self):
-        reply = QtGui.QMessageBox.question(self, 'Confirm',
-            'Are you sure you want to close all tabs?', QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
-        if reply == QtGui.QMessageBox.Yes:
+        reply = QtWidgets.QMessageBox.question(self, 'Confirm',
+            'Are you sure you want to close all tabs?', QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No)
+        if reply == QtWidgets.QMessageBox.Yes:
             while self.tab_frame.count() > 0:
                 self.get_active_tab().close()
                 self.tab_frame.removeTab(self.tab_frame.currentIndex())
@@ -301,11 +309,13 @@ class MainWindow(QtGui.QMainWindow):
         if self.confirm_exit():
             self.shutdown()
             self.app.quit()
+            if self.shutdown_on_exit:
+                os.system("shutdown -h now")
 
     def menu_reload(self):
-        reply = QtGui.QMessageBox.question(self, 'Confirm',
-            'Are you sure you want to reload the VI?', QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
-        if reply == QtGui.QMessageBox.Yes:
+        reply = QtWidgets.QMessageBox.question(self, 'Confirm',
+            'Are you sure you want to reload the app?', QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No)
+        if reply == QtWidgets.QMessageBox.Yes:
             tab_window = self.get_active_tab()
             title = tab_window.reload_file()
             index = self.tab_frame.currentIndex()
@@ -343,21 +353,21 @@ class MainWindow(QtGui.QMainWindow):
             self.workspace = filename
 
     def menu_page_setup(self):
-        dialog = QtGui.QPageSetupDialog(self.printer)
+        dialog = QtPrintSupport.QPageSetupDialog(self.printer)
         dialog.exec_()
 
     def menu_print_preview(self):
-        dialog = QtGui.QPrintPreviewDialog(self.printer)
+        dialog = QtPrintSupport.QPrintPreviewDialog(self.printer)
         dialog.paintRequested.connect(self.print_current_tab)
         dialog.exec_()
 
     def menu_print(self):
-        dialog = QtGui.QPrintDialog(self.printer)
+        dialog = QtPrintSupport.QPrintDialog(self.printer)
         dialog.setWindowTitle('Print Document')
-        if dialog.exec_() == QtGui.QDialog.Accepted:
-            self.statusBar().showMessage('Printing...')
+        if dialog.exec_() == QtWidgets.QDialog.Accepted:
+            self.set_status_text('Printing...')
             self.print_current_tab(self.printer)
-            self.statusBar().clearMessage()
+            self.set_status_text('')
 
     def print_current_tab(self, printer):
         scroll_area = self.get_active_tab()
@@ -369,14 +379,29 @@ class MainWindow(QtGui.QMainWindow):
         x_offset = 0
         sb = scroll_area.verticalScrollBar()
         y_offset = - scale*sb.sliderPosition()
-        p = QtGui.QPainter(printer)
-        p.setRenderHints(QtGui.QPainter.Antialiasing
-                        | QtGui.QPainter.TextAntialiasing
-                        | QtGui.QPainter.SmoothPixmapTransform, True)
-        p.translate(x_offset, y_offset)
-        p.scale(scale, scale)
-        scroll_area.frame.render(p)
-        p.end()
+#        # direct printing - comes out fuzzy
+#        painter = QtGui.QPainter(printer)
+#        painter.setRenderHints(QtGui.QPainter.Antialiasing
+#                        | QtGui.QPainter.TextAntialiasing
+#                        | QtGui.QPainter.SmoothPixmapTransform, True)
+#        painter.translate(x_offset, y_offset)
+#        painter.scale(scale, scale)
+#        scroll_area.frame.render(painter, QtCore.QPoint())
+#        painter.end()
+        # indirect printing: print to picture and then to printer 
+        #   for sharper output from many controls
+        # first draw to the QPicture
+        picture = QtGui.QPicture()
+        picture_painter = QtGui.QPainter(picture)
+        picture_painter.translate(x_offset, y_offset)
+        picture_painter.scale(scale, scale)
+        scroll_area.frame.render(picture_painter, QtCore.QPoint(0, 0))
+        picture_painter.end();
+        # then draw the QPicture to the printer
+        painter = QtGui.QPainter(printer)
+        painter.drawPicture(QtCore.QPoint(0, 0), picture);
+        painter.end()
+        
 
     def menu_cut(self):
         w = self.app.focusWidget()
@@ -410,10 +435,10 @@ class MainWindow(QtGui.QMainWindow):
 
     def menu_load_parameters_defaults(self):
         tab_window = self.get_active_tab()
-        reply = QtGui.QMessageBox.question(self, 'Confirm Load Parameters',
+        reply = QtWidgets.QMessageBox.question(self, 'Confirm Load Parameters',
             'Are you sure you want to replace current parameters?',
-            QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
-        if reply == QtGui.QMessageBox.Yes:
+            QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No)
+        if reply == QtWidgets.QMessageBox.Yes:
             tab_window.load_parameters(default=True)
 
     def menu_load_parameters(self):
@@ -428,11 +453,11 @@ class MainWindow(QtGui.QMainWindow):
     def shutdown(self):
         # stop all action threads then exit
         self.set_status_text('Waiting for threads and subprocesses to die...')
-        self.master.stop()
+        self.parent_process.stop()
 
     def open_html_file(self, filename):
         self.tab_frame.setUpdatesEnabled(False)
-        new_tab_window = TabHtmlWindow(self, self.master)
+        new_tab_window = TabHtmlWindow(self, self.parent_process)
         # set current working directory
         directory = os.path.dirname(filename)
         if directory != '':
@@ -441,6 +466,7 @@ class MainWindow(QtGui.QMainWindow):
         index = self.tab_frame.addTab(new_tab_window, title)
         self.tab_frame.setCurrentIndex(index)
         self.tab_frame.setUpdatesEnabled(True)
+        self.enable_menu_items()
 
     def open_workspace(self, filename):
         with open(filename, 'r') as file:
@@ -468,11 +494,11 @@ class MainWindow(QtGui.QMainWindow):
         self.tab_frame.setUpdatesEnabled(True)
 
     def menu_about(self):
-        QtGui.QMessageBox.about(self, 'About Pythics',
+        QtWidgets.QMessageBox.about(self, 'About Pythics',
 """Python Instrument Control System, also known as Pythics
-version 0.7.3
+version 1.0.0
 
-Copyright 2008 - 2015 Brian R. D'Urso
+Copyright 2008 - 2019 Brian R. D'Urso
 
 Pythics is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published
@@ -501,9 +527,9 @@ License along with Pythics. If not, see
 # TabHtmlWindow - one for each primary html file
 #
 class TabHtmlWindow(pythics.html.HtmlWindow):
-    def __init__(self, parent, master):
+    def __init__(self, parent, parent_process):
         self.main_window = parent
-        self.master = master
+        self.parent_process = parent_process
         self.title = None
         super(TabHtmlWindow, self).__init__(parent, 'pythics.controls',
                                             multiprocessing.get_logger())
@@ -514,12 +540,12 @@ class TabHtmlWindow(pythics.html.HtmlWindow):
 
     def redraw(self):
         if not self.error:
-            self.process.redraw()
+            self.child_process.redraw()
 
     def close(self):
         if not self.error:
             try:
-                self.master.stop_slave_process(self.process)
+                self.parent_process.stop_child_process(self.child_process)
             except Exception:
                 self.logger.exception('Error while closing process.')
 
@@ -534,11 +560,11 @@ class TabHtmlWindow(pythics.html.HtmlWindow):
             self.html_path, file_name_only = os.path.split(filename)
             self.default_parameter_filename = 'defaults.txt'
             anonymous_controls, controls = pythics.html.HtmlWindow.open_file(self, filename)
-            self.process = self.master.new_slave_process( self.html_path, file_name_only, anonymous_controls, controls)
-            self.process.start()
+            self.child_process = self.parent_process.new_child_process(self.html_path, file_name_only, anonymous_controls, controls)
+            self.child_process.start()
         except:
             message = 'Error while opening xml file %s\n' % file_name_only  + traceback.format_exc(0)
-            QtGui.QMessageBox.critical(self, 'Error', message, QtGui.QMessageBox.Ok)
+            QtWidgets.QMessageBox.critical(self, 'Error', message, QtWidgets.QMessageBox.Ok)
             self.logger.exception('Error while opening xml file.')
             self.error = True
         self.main_window.set_status_text('')
@@ -561,7 +587,7 @@ class TabHtmlWindow(pythics.html.HtmlWindow):
                 if default:
                     if not os.path.isabs(self.default_parameter_filename):
                         filename = os.path.join(self.html_path,
-                                        self.process.default_parameter_filename)
+                                        self.child_process.default_parameter_filename)
                 else:
                     if filename == '':
                         filename = self.main_window.get_open_filename('data (*.*)')
@@ -569,7 +595,7 @@ class TabHtmlWindow(pythics.html.HtmlWindow):
                         filename = os.path.join(self.html_path, filename)
                 if filename != '':
                     try:
-                        self.process.load_parameters(filename)
+                        self.child_process.load_parameters(filename)
                     except IOError as error:
                         (errno, strerror) = error.args
                         self.logger.error('Error (%s) opening parameter file: %s.' % (errno, strerror))
@@ -582,42 +608,47 @@ class TabHtmlWindow(pythics.html.HtmlWindow):
                 if default:
                     if not os.path.isabs(self.default_parameter_filename):
                         filename = os.path.join(self.html_path,
-                                        self.process.default_parameter_filename)
+                                        self.child_process.default_parameter_filename)
                 else:
                     if filename == '':
                         filename = self.main_window.get_save_filename('data (*.*)')
                     elif not os.path.isabs(filename):
                         filename = os.path.join(self.html_path, filename)
                 if filename != '':
-                        self.process.save_parameters(filename)
+                        self.child_process.save_parameters(filename)
             except:
                 self.logger.exception('Error while loading parameters.')
 
 
 class OptionsProcessor(object):
     def __init__(self):
-        self.multiprocess_manager = multiprocessing.Manager()
         # configure the logger
         self.logger = multiprocessing.log_to_stderr()
         #self.logger.setLevel(logging.DEBUG)
         #self.logger.setLevel(logging.INFO)
         self.logger.setLevel(logging.WARNING)
-        self.first_vi = ""
+        self.first_app = ""
+        self.first_workspace = ""
+        self.compact = False
+        self.shutdown_on_exit = False
 
     def usage(self):
-        print """\
+        print("""\
 Usage: pythics-run.py [options]
 Options:
-  -h | --help    show help text then exit
-  -a | --app     selects startup html file
-  -v | --verbose selects verbose mode
-  -d | --debug   selects debug mode"""
+  -h | --help       show help text then exit
+  -a | --app        selects startup app
+  -w | --workspace  selects startup workspace
+  -c | --compact    run in compact mode with simplified controls for small screens
+  -s | --shutdown   shutdown computer on exit (*nix only)
+  -v | --verbose    selects verbose mode
+  -d | --debug      selects debug mode""")
 
     def options(self):
         try:
-            opts, args = getopt.getopt(sys.argv[1:], 'ha:vd',
-                                       ['help', 'app', 'verbose', 'debug'])
-        except getopt.GetoptError, err:
+            opts, args = getopt.getopt(sys.argv[1:], 'ha:w:csvd',
+                                       ['help', 'app=', 'workspace=', 'compact', 'shutdown', 'verbose', 'debug'])
+        except getopt.GetoptError as err:
             # print help information and exit:
             print(err) # will print something like "option -a not recognized"
             self.usage()
@@ -625,14 +656,23 @@ Options:
         for o, a in opts:
             if o in ('-v', '--verbose'):
                 self.logger.setLevel(logging.INFO)
-            elif o in ('"-d', '--debug'):
+            elif o in ('-d', '--debug'):
                 self.logger.setLevel(logging.DEBUG)
             elif o in ('-h', '--help'):
                 self.usage()
                 sys.exit(0)
             elif o in ('-a', '--app'):
-                self.logger.info('starting ' + a)
-                self.first_vi = a
+                self.logger.info('opening app ' + a)
+                self.first_app = a
+            elif o in ('-w', '--workspace'):
+                self.logger.info('opening workspace ' + a)
+                self.first_workspace = a
+            elif o in ('-s', '--shutdown'):
+                self.logger.info('shutdown on exit')
+                self.shutdown_on_exit = True
+            elif o in ('-c', '--compact'):
+                self.logger.info('compact mode')
+                self.compact = True
             else:
                 assert False, 'unhandled option'
 
@@ -641,13 +681,17 @@ Options:
 # create and start the application
 #
 if __name__ == '__main__':
-    application = QtGui.QApplication(sys.argv)
-    master = pythics.master.Master()
+    manager = multiprocessing.Manager()
+    application = QtWidgets.QApplication(sys.argv)
+    parent_process = pythics.parent.Parent(manager)
     cl_options_processor = OptionsProcessor()
     cl_options_processor.options()
-    window = MainWindow(master, application)
+    window = MainWindow(parent_process, application, compact=cl_options_processor.compact)
     window.show()
-    master.start()
-    if os.path.isfile(cl_options_processor.first_vi):
-        window.open_html_file(cl_options_processor.first_vi)
+    parent_process.start()
+    if os.path.isfile(cl_options_processor.first_workspace):
+        window.open_workspace(cl_options_processor.first_workspace)
+    elif os.path.isfile(cl_options_processor.first_app):
+        window.open_html_file(cl_options_processor.first_app)
+    window.shutdown_on_exit = cl_options_processor.shutdown_on_exit
     application.exec_()
